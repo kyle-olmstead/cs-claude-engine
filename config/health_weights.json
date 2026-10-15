@@ -1,0 +1,8 @@
+{
+  "adoption": 0.25,
+  "engagement": 0.15,
+  "support": 0.15,
+  "sentiment": 0.15,
+  "relationship": 0.15,
+  "commercial": 0.15
+}

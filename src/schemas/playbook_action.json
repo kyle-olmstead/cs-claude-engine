@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs-claude-engine.dev/schemas/playbook_action.json",
+  "title": "PlaybookAction",
+  "description": "The output contract for every orchestrated Claude call. Used verbatim as the input_schema of the `emit_playbook_action` tool, and validated by the orchestrator before any routing. Playbook-specific sub-objects (renewal_plan, onboarding_plan, feature_audit, expansion_brief, ebr) are optional and populated only by the prompt that owns them. Every action and communication carries requires_human_approval; the orchestrator floors it to true for customer-facing or commercial items regardless of the model's value.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["playbook_id", "priority", "diagnosis", "renewal_outlook", "actions", "communications", "evidence", "confidence", "confidence_rationale", "data_quality_flags", "notes_for_csm"],
+  "properties": {
+    "playbook_id": {
+      "type": "string",
+      "enum": ["PB-RET-01", "PB-RET-02", "PB-ADP-01", "PB-ADP-02", "PB-CAD-01", "PB-EXP-01", "PB-EXP-02", "PB-OPS-01", "ADHOC"]
+    },
+    "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+    "related_action_ids": {
+      "type": "array",
+      "description": "Open actions in actions_last_30d this output extends rather than duplicates.",
+      "items": { "type": "string" }
+    },
+    "signal_update": {
+      "type": ["string", "null"],
+      "description": "When an action is already open, the new signal to append to it instead of creating a new action.",
+      "maxLength": 1000
+    },
+    "diagnosis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "primary_driver", "secondary_drivers", "counter_evidence"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 40, "maxLength": 1800 },
+        "primary_driver": {
+          "type": "string",
+          "enum": ["champion_loss", "org_change", "onboarding_incomplete", "product_gap", "reliability", "support_experience", "value_perception", "competitive_displacement", "relationship_neglect", "commercial_dispute", "expansion_opportunity", "cadence_due", "healthy", "unknown"]
+        },
+        "secondary_drivers": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "enum": ["champion_loss", "org_change", "onboarding_incomplete", "product_gap", "reliability", "support_experience", "value_perception", "competitive_displacement", "relationship_neglect", "commercial_dispute", "expansion_opportunity", "cadence_due", "healthy", "unknown"]
+          }
+        },
+        "counter_evidence": { "type": "string", "maxLength": 600 },
+        "blast_radius": { "type": ["string", "null"], "enum": ["full_account", "business_unit", "team", "expansion_only", null] },
+        "revenue_at_risk_usd": { "type": ["number", "null"], "minimum": 0 },
+        "timeline": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["date", "event", "source_path"],
+            "properties": {
+              "date": { "type": "string" },
+              "event": { "type": "string", "maxLength": 200 },
+              "source_path": { "type": "string" }
+            }
+          }
+        },
+        "candidate_drivers": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["driver", "for", "against", "to_confirm"],
+            "properties": {
+              "driver": { "type": "string" },
+              "for": { "type": "string", "maxLength": 400 },
+              "against": { "type": "string", "maxLength": 400 },
+              "to_confirm": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "disambiguating_question": { "type": ["string", "null"], "maxLength": 300 }
+      }
+    },
+    "renewal_outlook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["band", "rationale"],
+      "properties": {
+        "band": { "type": "string", "enum": ["likely", "at_risk", "unlikely", "unknown"] },
+        "rationale": { "type": "string", "maxLength": 600 }
+      }
+    },
+    "renewal_plan": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "recommended_scenario": { "type": "string", "enum": ["full_renewal", "right_size", "multi_year_expansion"] },
+        "fallback_scenario": { "type": "string", "enum": ["full_renewal", "right_size", "multi_year_expansion"] },
+        "timeline_anchor_today": { "type": "string", "maxLength": 200 },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scenario", "feasibility", "grr_impact_usd", "main_risk", "evidence_paths"],
+            "properties": {
+              "scenario": { "type": "string", "enum": ["full_renewal", "right_size", "multi_year_expansion"] },
+              "feasibility": { "type": "number", "minimum": 0, "maximum": 1 },
+              "grr_impact_usd": { "type": "number" },
+              "main_risk": { "type": "string", "maxLength": 300 },
+              "evidence_paths": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "stakeholder_asks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contact_id", "persona", "ask", "they_get", "first_touch_owner_role", "first_touch_channel", "first_touch_due_in_days"],
+            "properties": {
+              "contact_id": { "type": "string" },
+              "persona": { "type": "string" },
+              "ask": { "type": "string", "maxLength": 300 },
+              "they_get": { "type": "string", "maxLength": 300 },
+              "first_touch_owner_role": { "type": "string" },
+              "first_touch_channel": { "type": "string", "enum": ["email", "call", "meeting", "in_app", "slack_connect"] },
+              "first_touch_due_in_days": { "type": "integer", "minimum": 0 },
+              "responsiveness_evidence_path": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "value_story_inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outcome", "measured"],
+            "properties": {
+              "outcome": { "type": "string" },
+              "measured": { "type": "boolean" },
+              "measurement_plan": { "type": ["string", "null"], "maxLength": 300 }
+            }
+          }
+        }
+      }
+    },
+    "onboarding_plan": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "blocker_type": { "type": "string", "enum": ["technical_integration", "data_migration", "no_admin", "no_defined_outcome", "training_gap", "customer_process", "vendor_delay", "competing_priority", "unknown"] },
+        "blocker_detail": { "type": "string", "maxLength": 500 },
+        "nearest_milestone_key": { "type": "string" },
+        "unmet_prerequisites": { "type": "array", "items": { "type": "string" } },
+        "customer_owner_contact_id": { "type": ["string", "null"] },
+        "vendor_owner_role": { "type": "string" },
+        "milestone_target_date": { "type": "string" },
+        "first_win_statement": { "type": "string", "maxLength": 300 },
+        "onboarding_risk_tier": { "type": "string", "enum": ["watch", "at_risk", "stalled"] }
+      }
+    },
+    "feature_audit": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "feature_depth_30d": { "type": "number" },
+            "green_median": { "type": "number" },
+            "gap": { "type": "number" },
+            "feature_breadth_30d": { "type": "number" },
+            "power_user_ratio": { "type": ["number", "null"] },
+            "power_user_green_median": { "type": ["number", "null"] },
+            "seat_utilization": { "type": "number" },
+            "utilization_drift_90d": { "type": "number" }
+          }
+        },
+        "ranked_recommendations": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature_key", "retention_lift", "fit", "fit_factors", "rank_score", "target_persona", "delivery_mode"],
+            "properties": {
+              "feature_key": { "type": "string" },
+              "retention_lift": { "type": "number" },
+              "fit": { "type": "number", "minimum": 0, "maximum": 1 },
+              "fit_factors": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["persona_match", "outcome_match", "prereq_met", "peer_adoption"],
+                "properties": {
+                  "persona_match": { "type": "number" },
+                  "outcome_match": { "type": "number" },
+                  "prereq_met": { "type": "number" },
+                  "peer_adoption": { "type": "number" }
+                }
+              },
+              "rank_score": { "type": "number" },
+              "target_contact_id": { "type": ["string", "null"] },
+              "target_persona": { "type": "string" },
+              "prerequisite_gaps": { "type": "array", "items": { "type": "string" } },
+              "enablement_asset_id": { "type": ["string", "null"] },
+              "delivery_mode": { "type": "string", "enum": ["csm_session", "email", "in_app_nudge", "webinar", "docs_link"] },
+              "expected_adoption_days": { "type": ["integer", "null"] }
+            }
+          }
+        },
+        "fading_features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature_key", "last_used_days_ago", "likely_reason", "reengagement_action"],
+            "properties": {
+              "feature_key": { "type": "string" },
+              "last_used_days_ago": { "type": "integer" },
+              "likely_reason": { "type": "string", "maxLength": 300 },
+              "reengagement_action": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "adoption_narrative": { "type": "string", "maxLength": 800 },
+        "expansion_fit_notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature_key", "module", "fit_evidence"],
+            "properties": {
+              "feature_key": { "type": "string" },
+              "module": { "type": "string" },
+              "fit_evidence": { "type": "string", "maxLength": 300 }
+            }
+          }
+        }
+      }
+    },
+    "expansion_brief": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "readiness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ready", "blocking_conditions", "evidence_paths"],
+          "properties": {
+            "ready": { "type": "boolean" },
+            "blocking_conditions": { "type": "array", "items": { "type": "string" } },
+            "evidence_paths": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "plays": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["play_type", "description", "indicative_arr_usd", "sizing_basis", "sizing_confidence", "probability_band", "timing", "objection", "objection_response", "evidence_paths", "first_action"],
+            "properties": {
+              "play_type": { "type": "string", "enum": ["seat_expansion", "tier_upgrade", "module_cross_sell", "business_unit_expansion", "geo_expansion", "usage_commit_uplift"] },
+              "description": { "type": "string", "maxLength": 400 },
+              "indicative_arr_usd": { "type": "number", "minimum": 0 },
+              "sizing_basis": { "type": "string", "maxLength": 300 },
+              "sizing_confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+              "probability_band": { "type": "string", "enum": ["likely", "possible", "speculative"] },
+              "timing": { "type": "string", "enum": ["now", "next_quarter", "at_renewal", "later"] },
+              "sponsor_contact_id": { "type": ["string", "null"] },
+              "sponsor_rationale": { "type": ["string", "null"], "maxLength": 300 },
+              "objection": { "type": "string", "maxLength": 300 },
+              "objection_response": { "type": "string", "maxLength": 400 },
+              "evidence_paths": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "first_action": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "total_indicative_arr_usd": { "type": "number", "minimum": 0 },
+        "weighted_indicative_arr_usd": { "type": "number", "minimum": 0 },
+        "sales_handoff": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recommended", "ae_notes", "qualifying_facts", "do_not_say"],
+          "properties": {
+            "recommended": { "type": "boolean" },
+            "ae_notes": { "type": "string", "maxLength": 800 },
+            "qualifying_facts": { "type": "array", "items": { "type": "string" } },
+            "do_not_say": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "ebr": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "variant": { "type": "string", "enum": ["standard", "renewal", "expansion"] },
+        "audience": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "most_senior_contact_id": { "type": ["string", "null"] },
+            "persona": { "type": ["string", "null"] },
+            "cares_about": { "type": "array", "items": { "type": "string" } },
+            "missing_attendee_contact_id": { "type": ["string", "null"] },
+            "missing_attendee_rationale": { "type": ["string", "null"], "maxLength": 300 }
+          }
+        },
+        "narrative_markdown": { "type": "string", "maxLength": 2500 },
+        "slides": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["n", "title", "claim", "talk_track", "ask_the_room", "visual", "sources", "risk_if_challenged"],
+            "properties": {
+              "n": { "type": "integer", "minimum": 1, "maximum": 10 },
+              "title": { "type": "string", "maxLength": 80 },
+              "claim": { "type": "string", "maxLength": 300 },
+              "talk_track": { "type": "string", "maxLength": 900 },
+              "ask_the_room": { "type": "string", "maxLength": 200 },
+              "visual": { "type": "string", "maxLength": 200 },
+              "sources": { "type": "array", "items": { "type": "string" } },
+              "risk_if_challenged": { "type": "string", "maxLength": 400 }
+            }
+          }
+        },
+        "roi_table": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "loaded_hourly_rate_source": { "type": ["string", "null"] },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["outcome", "unit", "measured", "source_paths"],
+                "properties": {
+                  "outcome": { "type": "string" },
+                  "baseline": { "type": ["number", "null"] },
+                  "current": { "type": ["number", "null"] },
+                  "delta": { "type": ["number", "null"] },
+                  "unit": { "type": "string" },
+                  "value_formula": { "type": ["string", "null"], "maxLength": 300 },
+                  "value_low_usd": { "type": ["number", "null"] },
+                  "value_base_usd": { "type": ["number", "null"] },
+                  "value_high_usd": { "type": ["number", "null"] },
+                  "measured": { "type": "boolean" },
+                  "source_paths": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "totals": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "low": { "type": "number" },
+                "base": { "type": "number" },
+                "high": { "type": "number" }
+              }
+            },
+            "unmeasured": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["outcome", "proposed_measurement", "owner_role", "by_date"],
+                "properties": {
+                  "outcome": { "type": "string" },
+                  "proposed_measurement": { "type": "string", "maxLength": 300 },
+                  "owner_role": { "type": "string" },
+                  "by_date": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "decision_asks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contact_id", "role", "decision", "by_date"],
+            "properties": {
+              "contact_id": { "type": ["string", "null"] },
+              "role": { "type": "string" },
+              "decision": { "type": "string", "maxLength": 300 },
+              "by_date": { "type": "string" }
+            }
+          }
+        },
+        "prework": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "unknowns_to_confirm": { "type": "array", "maxItems": 3, "items": { "type": "string" } },
+            "missing_attendee": { "type": ["string", "null"] },
+            "risk_to_preempt": { "type": ["string", "null"], "maxLength": 300 },
+            "suggested_duration_minutes": { "type": "integer", "minimum": 15, "maximum": 120 }
+          }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "title", "description", "owner_role", "due_in_days", "requires_human_approval"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["crm_task", "crm_write", "meeting_request", "internal_escalation", "support_escalation", "enablement_session", "digital_nudge", "measurement", "stakeholder_mapping", "sales_handoff", "opportunity_suggestion", "deferral", "note"]
+          },
+          "title": { "type": "string", "maxLength": 120 },
+          "description": { "type": "string", "maxLength": 600 },
+          "owner_role": { "type": "string", "enum": ["csm", "cs_leader", "ae", "implementation_manager", "solutions_engineer", "support", "engineering", "product", "digital_programs", "cs_ops", "exec_sponsor_internal"] },
+          "due_in_days": { "type": "integer", "minimum": 0, "maximum": 180 },
+          "requires_human_approval": { "type": "boolean" },
+          "depends_on": { "type": ["integer", "null"], "description": "Index of a prerequisite action in this array." },
+          "crm_write": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["object", "field", "value"],
+            "properties": {
+              "object": { "type": "string", "enum": ["account", "contact", "opportunity", "task", "cadence"] },
+              "object_id": { "type": ["string", "null"] },
+              "field": { "type": "string" },
+              "value": { "type": ["string", "number", "boolean", "null"] }
+            }
+          },
+          "digital_nudge": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "channel": { "type": "string", "enum": ["in_app", "email", "push"] },
+              "audience": { "type": "string" },
+              "headline": { "type": "string", "maxLength": 80 },
+              "body": { "type": "string", "maxLength": 300 },
+              "cta_label": { "type": "string", "maxLength": 40 },
+              "cta_target": { "type": "string" }
+            }
+          },
+          "evidence_paths": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "communications": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["recipient_contact_id", "channel", "subject", "body_markdown", "tone_notes", "send_after_days", "requires_human_approval"],
+        "properties": {
+          "recipient_contact_id": { "type": "string" },
+          "cc_contact_ids": { "type": "array", "items": { "type": "string" } },
+          "channel": { "type": "string", "enum": ["email", "slack_connect", "in_app_message", "linkedin"] },
+          "subject": { "type": "string", "maxLength": 120 },
+          "body_markdown": { "type": "string", "maxLength": 1800 },
+          "tone_notes": { "type": "string", "maxLength": 200 },
+          "send_after_days": { "type": "integer", "minimum": 0, "maximum": 60 },
+          "requires_human_approval": { "type": "boolean", "const": true },
+          "purpose": { "type": ["string", "null"], "enum": ["continuity", "value_review", "renewal_kickoff", "onboarding_checkin", "enablement", "expansion_discovery", "ebr_preread", "escalation_response", null] }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_path", "value", "supports"],
+        "properties": {
+          "source_path": { "type": "string", "description": "Dotted/bracket JSON path into the Customer 360, e.g. relationship.stakeholders[2].enrichment.current_employer" },
+          "value": { "type": ["string", "number", "boolean", "null", "array", "object"] },
+          "supports": { "type": "string", "maxLength": 200, "description": "The claim this evidence supports." }
+        }
+      }
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "confidence_rationale": { "type": "string", "maxLength": 400 },
+    "data_quality_flags": { "type": "array", "items": { "type": "string", "maxLength": 300 } },
+    "notes_for_csm": { "type": "string", "maxLength": 1200 }
+  }
+}

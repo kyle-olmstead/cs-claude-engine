@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0",
+  "as_of_date": "2026-10-15",
+  "account": {
+    "account_id": "acc_01HZXK3V8Q",
+    "name": "Contoso Logistics",
+    "segment": "enterprise",
+    "industry": "Transportation & Logistics",
+    "region": "NA",
+    "employee_count": 4200,
+    "fiscal_year_end": "12-31",
+    "csm_owner_id": "csm_017",
+    "csm_owner_name": "Priya Natarajan",
+    "ae_owner_id": "ae_044",
+    "created_at": "2024-01-18",
+    "product_line": "ops_platform",
+    "crm_system": "hubspot",
+    "cse_opt_out_playbooks": [],
+    "team": [
+      {"role": "csm", "name": "Priya Natarajan", "user_id": "csm_017"},
+      {"role": "ae", "name": "Marcus Bell", "user_id": "ae_044"},
+      {"role": "exec_sponsor_internal", "name": "Dana Whitfield", "user_id": "vp_003"}
+    ],
+    "business_outcomes": [
+      {"outcome": "Reconciliation hours per month", "unit": "hours", "baseline": 340, "current": 95, "measured_at": "2026-09-30", "source": "customer finance export", "value_formula": "hours_saved * loaded_hourly_rate", "attribution_share": null, "unit_cost": null},
+      {"outcome": "Report turnaround", "unit": "days", "baseline": 6, "current": 1, "measured_at": "2026-09-30", "source": "ops lead", "value_formula": null, "attribution_share": null, "unit_cost": null},
+      {"outcome": "Audit findings per quarter", "unit": "findings", "baseline": 14, "current": null, "measured_at": null, "source": null, "value_formula": null, "attribution_share": null, "unit_cost": null}
+    ]
+  },
+  "contract": {
+    "arr": 240000,
+    "arr_90d_ago": 240000,
+    "currency": "USD",
+    "term_start": "2025-01-18",
+    "term_end": "2027-01-18",
+    "term_months": 24,
+    "days_to_renewal": 95,
+    "auto_renew": false,
+    "seats_purchased": 500,
+    "tier": "enterprise",
+    "modules_owned": ["core"],
+    "payment_days_past_due": 0,
+    "contraction_flag_90d": false,
+    "contraction_detail": null,
+    "arr_change_reason": null,
+    "renewal_opportunity": {"opportunity_id": "opp_7781", "stage": "Discovery", "amount": 240000, "close_date": "2027-01-18", "cse_scenario": null},
+    "commit_units": null,
+    "consumed_units_run_rate_monthly": null
+  },
+  "health": {
+    "score": 60.0,
+    "band": "yellow",
+    "score_30d_ago": 79.4,
+    "score_90d_ago": 81.0,
+    "band_30d_ago": "green",
+    "trend_adjustment": -1.21,
+    "components": [],
+    "overrides_applied": [],
+    "mart_score": 60.0
+  },
+  "usage": {
+    "dau_mau_30d": 0.36,
+    "wau_mau_30d": 0.71,
+    "mau_30d": 405,
+    "active_users_30d": 405,
+    "feature_depth_30d": 0.5,
+    "feature_breadth_30d": 0.5,
+    "power_user_ratio": 0.28,
+    "seat_utilization": 0.81,
+    "seat_utilization_90d_ago": 0.79,
+    "utilization_drift_90d": 0.02,
+    "days_since_last_login": 0,
+    "core_features_used": ["dashboards", "alerts"],
+    "core_features_unused": ["workflow_automation", "api_access"],
+    "fading_features": [{"feature_key": "scheduled_reports", "last_used_days_ago": 61, "last_user_email_hash": "9f1c0e2a7b3d"}],
+    "integrations_connected": ["crm"],
+    "feature_gate_hits_14d": [],
+    "usage_by_business_unit": [
+      {"business_unit": "Finance Ops", "active_users_30d": 310, "seats_allocated": 350, "engaged_contacts": 3},
+      {"business_unit": "Fleet", "active_users_30d": 95, "seats_allocated": 150, "engaged_contacts": 1}
+    ],
+    "pql_score": null
+  },
+  "support": {
+    "open_tickets": [
+      {"ticket_id": "tk_55120", "priority": "P2", "status": "open", "age_days": 3, "subject": "Scheduled export intermittently fails for EU region", "reopened_count": 0, "tags": ["export", "eu"]}
+    ],
+    "tickets_30d": 6,
+    "tickets_per_100_seats_30d": 1.2,
+    "p1_p2_opened_90d": 2,
+    "avg_csat_90d": 4.4,
+    "csat_responses_90d": 9,
+    "median_first_response_hours_90d": 3.1,
+    "incidents_affecting_account_90d": 0
+  },
+  "sentiment": {
+    "latest_nps": 20,
+    "latest_nps_at": "2026-09-12",
+    "nps_trend": "stable",
+    "latest_csat": 4.4,
+    "transcript_sentiment_30d": 0.3,
+    "ecri": 71.0,
+    "ecri_components": {"job_change": 1.0, "disengagement": 0.09, "single_thread": 0.5, "no_exec_sponsor": 0.0, "tenure": 0.5},
+    "theme_counts_90d": {"positive_outcome": 3, "expansion_intent": 1, "reliability": 1, "champion_change": 1},
+    "nps_responses": [
+      {"response_id": "nps_88213", "contact_id": "ct_03", "score": 9, "responded_at": "2026-09-12", "verbatim": "Finance Ops lives in this now. The EU export hiccup is annoying but support has been quick."},
+      {"response_id": "nps_88214", "contact_id": "ct_04", "score": 6, "responded_at": "2026-09-12", "verbatim": "Fleet hasn't really adopted it. We were told Jordan would drive that and now Jordan's gone."}
+    ],
+    "transcript_signals": [
+      {
+        "call_id": "call_20260826",
+        "occurred_at": "2026-08-26",
+        "sentiment": 0.6,
+        "urgency": "medium",
+        "themes": [
+          {"theme": "positive_outcome", "polarity": 1, "quoted_evidence": "we closed the books four days faster last quarter", "paraphrase": "Finance Ops attributes a faster close to the platform", "urgency": "none", "feature_or_entity": "dashboards"},
+          {"theme": "expansion_intent", "polarity": 1, "quoted_evidence": "the EMEA team keeps asking when they get access", "paraphrase": "Stated demand from an unowned region", "urgency": "medium", "feature_or_entity": "EMEA"}
+        ],
+        "entities": [{"type": "stakeholder_role", "value": "EMEA ops lead", "context": "asking for access"}],
+        "champion_change_detected": false,
+        "summary": "Strong finance outcome; EMEA demand surfaced; no risk themes."
+      }
+    ],
+    "verbatim_signals": []
+  },
+  "relationship": {
+    "stakeholders": [
+      {"contact_id": "ct_01", "name": "Jordan Reyes", "title": "Director, Operations Systems", "email_hash": "a1b2c3d4e5f6", "persona": "champion", "seniority": "director", "function": "operations", "business_unit": "Finance Ops", "is_champion": true, "is_exec_sponsor": false, "last_engaged_at": "2026-09-07", "last_engagement_direction": "outbound", "engagements_90d": 2, "tenure_months_at_account": 14, "left_company_at": null,
+       "enrichment": {"provider": "clay", "enriched_at": "2026-10-13", "current_employer": "Northwind Traders", "current_title": "Senior Director, Operations", "employer_matches_account": false, "title_changed": true, "enrichment_stale": false}},
+      {"contact_id": "ct_02", "name": "Elena Vasquez", "title": "SVP Finance Operations", "email_hash": "b2c3d4e5f6a1", "persona": "executive_sponsor", "seniority": "vp", "function": "finance", "business_unit": "Finance Ops", "is_champion": false, "is_exec_sponsor": true, "last_engaged_at": "2026-09-05", "last_engagement_direction": "two_way", "engagements_90d": 1, "tenure_months_at_account": 48, "left_company_at": null,
+       "enrichment": {"provider": "clay", "enriched_at": "2026-10-13", "current_employer": "Contoso Logistics", "current_title": "SVP Finance Operations", "employer_matches_account": true, "title_changed": false, "enrichment_stale": false}},
+      {"contact_id": "ct_03", "name": "Sam Okafor", "title": "Finance Systems Admin", "email_hash": "c3d4e5f6a1b2", "persona": "admin", "seniority": "individual_contributor", "function": "finance", "business_unit": "Finance Ops", "is_champion": false, "is_exec_sponsor": false, "last_engaged_at": "2026-10-13", "last_engagement_direction": "two_way", "engagements_90d": 7, "tenure_months_at_account": 30, "left_company_at": null,
+       "enrichment": {"provider": "clay", "enriched_at": "2026-10-13", "current_employer": "Contoso Logistics", "current_title": "Finance Systems Admin", "employer_matches_account": true, "title_changed": false, "enrichment_stale": false}},
+      {"contact_id": "ct_04", "name": "Tasha Lindqvist", "title": "Fleet Operations Manager", "email_hash": "d4e5f6a1b2c3", "persona": "ops_manager", "seniority": "manager", "function": "fleet", "business_unit": "Fleet", "is_champion": false, "is_exec_sponsor": false, "last_engaged_at": "2026-09-12", "last_engagement_direction": "inbound", "engagements_90d": 1, "tenure_months_at_account": 22, "left_company_at": null,
+       "enrichment": null},
+      {"contact_id": "ct_05", "name": "Raj Mehta", "title": "VP Procurement", "email_hash": "e5f6a1b2c3d4", "persona": "procurement", "seniority": "vp", "function": "procurement", "business_unit": null, "is_champion": false, "is_exec_sponsor": false, "last_engaged_at": "2025-12-10", "last_engagement_direction": "two_way", "engagements_90d": 0, "tenure_months_at_account": 60, "left_company_at": null,
+       "enrichment": null}
+    ],
+    "champion": {"contact_id": "ct_01", "status": "departed", "last_engaged_at": "2026-09-07", "replacement_identified": false, "replacement_contact_id": null},
+    "multithreading_depth": 2,
+    "functions_engaged_90d": ["finance", "fleet"],
+    "days_since_last_csm_touch": 9,
+    "exec_sponsor_engaged_180d": true
+  },
+  "opportunities": [
+    {"opportunity_id": "opp_7781", "type": "renewal", "stage": "Discovery", "amount": 240000, "created_at": "2026-09-01", "close_date": "2027-01-18", "is_closed": false, "is_won": null}
+  ],
+  "whitespace": {
+    "unowned_modules": ["security", "analytics_plus"],
+    "unowned_business_units": ["EMEA Ops"],
+    "unowned_regions": ["EMEA"],
+    "next_tier": "enterprise_plus",
+    "indicative_sizing": {"emea_ops_seats": 72000, "security_module": 120000}
+  },
+  "cadence": {
+    "ebr_cadence": "quarterly",
+    "last_ebr_at": "2026-05-20",
+    "next_ebr_due_at": "2026-11-05",
+    "last_ebr_prepared_at": null,
+    "ebrs_completed_last_2_quarters": 1,
+    "next_ebr_attendees": ["ct_02", "ct_03"]
+  },
+  "lifecycle": {
+    "stage": "established",
+    "days_since_term_start": 635,
+    "kickoff_at": "2025-01-22",
+    "kickoff_notes": "Goal: cut month-end reconciliation effort in Finance Ops by half within two quarters; Fleet rollout in phase 2.",
+    "value_milestones_reached": [
+      {"milestone_key": "integration_connected", "reached_at": "2025-02-10"},
+      {"milestone_key": "first_production_workflow", "reached_at": "2025-02-28"},
+      {"milestone_key": "five_active_users", "reached_at": "2025-03-04"}
+    ],
+    "ttv_days": 23,
+    "onboarding_steps": []
+  },
+  "conversations": [
+    {"call_id": "call_20260826", "occurred_at": "2026-08-26", "duration_sec": 2700, "transcript_uri": null, "participants": ["ct_02", "ct_03"], "parsed": true}
+  ],
+  "actions_last_30d": [],
+  "benchmarks": {}
+}
