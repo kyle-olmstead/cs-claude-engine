@@ -163,7 +163,7 @@ python -m src.orchestrator --input feeds/ --account-id <id> --playbook PB-CAD-01
 
 **Exit:** EBR marked completed in CRM; `ebr_prework.json` unknowns resolved and written back as `account.business_outcomes[]` updates.
 
-**Measured effect (reference deployment).** EBR on-time completion rose from 54% to 81% in two quarters after automation; CSM prep time per EBR fell from a median 6.5 hours to 1.8 hours.
+**What to measure.** EBR on-time completion rate and CSM prep hours per EBR, before and one quarter after automation. The engine has not yet been run in a production deployment, so there is no measured baseline to quote; the ROI memo (`docs/04_ROI_MEMO.md`) models the expected effect and says how to verify it.
 
 ---
 

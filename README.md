@@ -23,7 +23,7 @@
     5 min           10 min       1 hour       1–2 weeks       as needed
        │               │            │         (needs an eng)      │
        ▼               ▼            ▼             ▼               ▼
-  Read §1–3       §4 Install   §4, then      §10 Server     §11 Under the
+  Read §1–4       §5 Install   §5, then      §11 Server     §12 Under the
                   then say     share this    mode           hood
                   "set up the  link; each
                   CS engine"   person runs
@@ -32,13 +32,13 @@
 
 | If you are… | Start with | What you'll have | Time |
 |---|---|---|---|
-| **A CEO or exec** deciding if this is worth the team's time | §1–3, then ask your CS lead to run it on five accounts | A clear picture of what it does, what it won't do, and what it needs from you | 5 min |
-| **A CSM** with a set of accounts | §4 Install → say *"set up the CS engine"* → say *"review my book"* | A ranked list of who needs attention today, why, and the plan for each | 10 min |
-| **A Head of CS / VP** rolling it out | Same on your own accounts, then §7 (the operating rhythm) and share this link | Everyone on one health score, one set of playbooks, one weekly routine | 1 hour |
-| **CS Ops / RevOps** | §10 Server mode | Nightly runs across every account, history in your warehouse, an audit trail | 1–2 weeks |
-| **An engineer or data person** | §11 → `docs/01_ARCHITECTURE.md` | The full design, every formula, every prompt | As long as you like |
+| **A CEO or exec** deciding if this is worth the team's time | §1–4 (§4 is the business case), then ask your CS lead to run it on five accounts | A clear picture of what it does, what it won't do, and what it needs from you | 5 min |
+| **A CSM** with a set of accounts | §5 Install → say *"set up the CS engine"* → say *"review my book"* | A ranked list of who needs attention today, why, and the plan for each | 10 min |
+| **A Head of CS / VP** rolling it out | Same on your own accounts, then §8 (the operating rhythm) and share this link | Everyone on one health score, one set of playbooks, one weekly routine | 1 hour |
+| **CS Ops / RevOps** | §11 Server mode | Nightly runs across every account, history in your warehouse, an audit trail | 1–2 weeks |
+| **An engineer or data person** | §12 → `docs/01_ARCHITECTURE.md` | The full design, every formula, every prompt | As long as you like |
 
-A few words used throughout: a **CSM** is a Customer Success Manager, the person responsible for keeping customers happy and renewing. Their **book** is the set of accounts they look after. A **champion** is your main internal advocate inside a customer's company. A **health score** is a 0–100 estimate of how likely an account is to stay. Full list in §12.
+A few words used throughout: a **CSM** is a Customer Success Manager, the person responsible for keeping customers happy and renewing. Their **book** is the set of accounts they look after. A **champion** is your main internal advocate inside a customer's company. A **health score** is a 0–100 estimate of how likely an account is to stay. Full list in §13.
 
 ---
 
@@ -84,7 +84,25 @@ Every recommendation carries its evidence — the exact fields in your data it w
 
 ---
 
-## 4. Install (10 minutes)
+## 4. What it's worth
+
+A ten-person Customer Success team costs about **$1.66 million a year** fully loaded, or **$1.81 million** once you price in the people who leave. When two of the ten aren't working out, the usual fix is to replace them: about **$182,000** in year one to end up where you started.
+
+The alternative this engine makes possible is to not backfill. Spread their accounts across the eight who are performing, and give those eight the engine so the extra load is absorbed by work the engine now does for them (business-review prep, weekly account triage, renewal planning, red-account diagnosis).
+
+| | Year 1 | Every year after |
+|---|---|---|
+| Two seats you no longer fill | $331,955 avoided | $331,955 avoided |
+| Severance, setup, and the engine's run cost | ($59,785) | ($13,400) |
+| **Net effect on operating expense** | **+$272,170** | **+$318,555** |
+
+On a $30 million revenue base that is about one point of operating margin before counting any improvement in retention. The engine pays for itself if it saves one $13,400 renewal a year, and the case stays positive even if bigger books cost half a point of retention.
+
+These are modeled figures, not customer results, and the engine has not yet run in a production deployment. The full memo explains every number in plain English, names what could go wrong, separates what is verified from what you should test yourself, and ships with the calculator so you can rerun it with your own figures: [`docs/04_ROI_MEMO.md`](docs/04_ROI_MEMO.md).
+
+---
+
+## 5. Install (10 minutes)
 
 You need a paid Claude plan (Pro, Max, Team, or Enterprise) with your CRM connected. It works best in **Claude Code** or the **Claude desktop app with a working folder**, where it can save each account's file and run its scoring script. In a plain web chat it still works, but it scores by hand and can't keep history between conversations.
 
@@ -102,7 +120,7 @@ Setup looks at which tools you have connected, sorts them into the roles the eng
 
 ---
 
-## 5. What it needs from you
+## 6. What it needs from you
 
 The engine is only as good as three things in your CRM. Thirty minutes here is worth more than any setting:
 
@@ -118,7 +136,7 @@ If you'll let the engine write back to the CRM (it asks first, every time), crea
 
 ---
 
-## 6. What to say to it
+## 7. What to say to it
 
 | Say… | What happens |
 |---|---|
@@ -139,7 +157,7 @@ Every one ends the same way: it shows what it found and asks which actions you w
 
 ---
 
-## 7. The operating rhythm (this is the part that makes it work)
+## 8. The operating rhythm (this is the part that makes it work)
 
 Tools don't change outcomes; routines do. The engine is built around this cadence:
 
@@ -155,7 +173,7 @@ A team that only does the weekly 20 minutes gets most of the value. A team that 
 
 ---
 
-## 8. A worked example
+## 9. A worked example
 
 *The account below is made up. The reasoning is exactly what the engine does.*
 
@@ -167,7 +185,7 @@ The CSM edits one sentence, sends it, and the next conversation starts from the 
 
 ---
 
-## 9. Trust and control
+## 10. Trust and control
 
 - **You approve everything customer-facing.** Emails are drafts. CRM changes are proposals. The engine has no way to send mail.
 - **Every number has a source.** Each recommendation lists the exact data fields it relied on; claims without evidence are rejected automatically.
@@ -177,13 +195,13 @@ The CSM edits one sentence, sends it, and the next conversation starts from the 
 
 ---
 
-## 10. For bigger teams: server mode
+## 11. For bigger teams: server mode
 
 The same engine can run as a scheduled job against your data warehouse — every account, every night, with history and an audit log — writing back to the CRM through the same approval rules. It ships with the warehouse models (dbt), the scoring code, and the orchestration script. This path needs an engineer and takes one to two weeks: [`docs/00_SERVER_QUICKSTART.md`](docs/00_SERVER_QUICKSTART.md).
 
 ---
 
-## 11. Under the hood (for the technical reader)
+## 12. Under the hood (for the technical reader)
 
 ```
 cs-claude-engine/
@@ -192,8 +210,8 @@ cs-claude-engine/
 ├── src/           Python — health score, retention math, orchestrator, validator, CRM/enrichment/transcript tools
 ├── src/schemas/   The two contracts: customer_360.json (input) and playbook_action.json (output)
 ├── dbt/           A runnable dbt project: sources, 14 staging models, the two marts, tests, and seeds that build on your laptop
-├── scripts/       Seed generator, SQL↔Python parity check, weight sync
-├── docs/          Server quickstart · architecture · metrics (every formula) · playbook index
+├── scripts/       Seed generator, SQL↔Python parity check, weight sync, ROI calculator
+├── docs/          Server quickstart · architecture · metrics (every formula) · playbook index · ROI memo
 ├── playbooks/     Long-form operating playbooks with triggers, timelines, roles, exit criteria
 ├── CONNECTORS.md  How tool categories map to real products
 ├── examples/      A complete sample account and a sample conversation
@@ -204,7 +222,7 @@ Every technical document opens with a plain-English summary so you can stop read
 
 ---
 
-## 12. Words used here
+## 13. Words used here
 
 | Term | Meaning |
 |---|---|
@@ -233,7 +251,7 @@ Every technical document opens with a plain-English summary so you can stop read
 
 **Will it ever email my customers?** No. There is no send path. It writes drafts for you.
 
-**Is the health score accurate?** It's a well-reasoned default. Validate it against your own churn after one quarter (§5) — that's true of every health score ever built.
+**Is the health score accurate?** It's a well-reasoned default. Validate it against your own churn after one quarter (§6) — that's true of every health score ever built.
 
 **What does it cost?** The software is free (Apache 2.0). You need a paid Claude plan.
 

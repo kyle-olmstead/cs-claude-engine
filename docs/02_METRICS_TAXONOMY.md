@@ -288,7 +288,7 @@ QBR coverage (ARR)  = Σ ARR of accounts with a completed QBR / Σ ARR due
 
 A QBR is "due" by segment cadence: enterprise quarterly, mid-market semi-annual, SMB annual, digital none (replaced by automated value summary). "On time" = within 15 days of due date. ARR-weighted coverage matters more than count — a CSM at 70% count but 95% ARR coverage is prioritizing correctly.
 
-**Automation.** The `executive_ebr_generator` prompt fires 30 days before due; an EBR with a generated pre-read is 2.4× more likely to be completed on time in the reference deployment.
+**Automation.** The `executive_ebr_generator` prompt fires 30 days before due, so the pre-read and script exist before the CSM starts prep. Whether that lifts on-time completion in your team is one of the things to measure in the first quarter.
 
 **Implementation.** `metrics_calculator.qbr_completion_velocity()`.
 

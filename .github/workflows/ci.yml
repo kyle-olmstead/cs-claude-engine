@@ -13,6 +13,7 @@ jobs:
       - run: python -m src.orchestrator --input examples/sample_customer_360.json --triggers-only --out /tmp/t
       - run: python -m src.orchestrator --input examples/sample_customer_360.json --offline --out /tmp/o
       - run: python scripts/sync_health_weights.py --check
+      - run: python scripts/roi_model.py --json > /dev/null
   dbt:
     runs-on: ubuntu-latest
     steps:
