@@ -1,5 +1,7 @@
 # Playbook PB-RET-01 — Enterprise At-Risk Turnaround
 
+> **In plain English.** The step-by-step for the first 30 days after an important customer turns red or loses its champion. It says what sets it off, how serious each case is, who does what by when, what the engine hands you (the diagnosis, the plan, the first email), and how the account exits the playbook. If you run a CS team, §2 (severity tiers) and §4 (timeline) are the parts to know by heart.
+
 **Pillar:** Retention · **Priority:** P0 · **Cooldown:** 14 days · **Owner:** CSM (accountable: CS leader) · **Prompt chain:** `retention.churn_risk_rca` → `retention.renewal_defense_playbook` (+ `core.sentiment_analyzer` on new verbatims/transcripts)
 
 This is the playbook that runs when an enterprise or mid-market account turns red, drops sharply, loses its champion, or carries an aged P1 into the renewal window. It is deliberately front-loaded: the first 72 hours determine whether the account is saveable, and the engine's job is to make those 72 hours count by handing the CSM a diagnosis, a plan, and the first customer touch before they have finished their coffee.

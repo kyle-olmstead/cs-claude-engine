@@ -1,5 +1,7 @@
 # 02 — Metrics Taxonomy
 
+> **In plain English.** Every number the engine uses, defined once, so nobody argues about the formula in a meeting. Retention numbers (Part A) tell you what already happened; health and adoption numbers (Part B) tell you what's about to; sentiment and relationship numbers (Part C) tell you how people feel about you; capacity numbers (Part D) tell you whether the team can cover the book. If you only read one section: **B1** (how the health score is built and how to check it against your own churn) and **Part E** (what "good" looks like for a company your size).
+
 Every metric the engine computes or reasons over, with its definition, formula, data source, cohort rules, thresholds, and the failure modes that make the number lie. Where a metric is implemented in code, the implementing function and mart are named so the formula here is the formula there.
 
 Conventions:

@@ -1,268 +1,240 @@
 # CS-Claude Engine
 
-**An open-source AI Customer Success Operating System.** Claude runs continuously across a CSM's book of business: it reads the warehouse, scores health, diagnoses churn risk, finds expansion whitespace, drafts the next customer touch, and writes every decision back to the CRM as a validated, auditable `PlaybookAction`.
+**An AI teammate for Customer Success that works inside the tools you already use.**
 
-CS-Claude Engine is not a chatbot bolted onto a CRM. It is a closed loop:
-
-```
-   warehouse (dbt marts)  ──►  Customer 360 JSON  ──►  Claude (prompt + tool_use)  ──►  PlaybookAction JSON
-        ▲                                                                                      │
-        │                                                                                      ▼
-   outcome log  ◄──────────────  CRM / Slack / Email adapters  ◄──────────────  human approval gate
-```
-
-Every stage is typed, versioned, and testable. Claude never free-texts into a CRM field; it emits structured JSON against a schema the orchestrator validates before anything is written.
-
-The engine runs two ways from the same files:
-
-| Mode | Where it runs | Data comes from | Best for |
-|---|---|---|---|
-| **Plugin mode** | Inside your Claude account (Claude app, Cowork, or Claude Code) as an installed plugin | The connectors you already have — HubSpot/Salesforce, Zendesk, Gong/Zoom, Amplitude, Clay, Slack, Gmail, Drive… | A CSM or CS leader who wants the engine on their own book today, with no infrastructure |
-| **Server mode** | A scheduled Python job against your warehouse (`src/orchestrator.py` + dbt marts) | JSONL feeds exported from the marts | CS Ops running the whole customer base daily, with audit logs and CRM write-back |
+**If you read nothing else:**
+- It connects to your CRM and the other tools your team already has, and tells you which customers are about to leave, which are ready to buy more, and what to do about each one — with the plan and the first email already drafted.
+- It never contacts a customer or changes a record without a person approving it.
+- It's free, open source, and a CSM can install it in about ten minutes. A sample account is included so you can watch it work before connecting anything.
 
 ---
 
-## Install into your Claude account (plugin mode)
+## Start here
 
-The repository is itself a Claude plugin and a one-plugin marketplace. Nobody needs to clone it or set an API key; the plugin uses the connectors already authorized in your Claude account.
+```
+                          What are you here to do?
+                                    │
+       ┌───────────────┬────────────┼─────────────┬───────────────┐
+       ▼               ▼            ▼             ▼               ▼
+  Understand       Try it on    Roll it out   Run it for     Change how
+  what it is       my own       to my CS      the whole      it thinks
+                   accounts     team          company        (scoring, prompts)
+       │               │            │             │               │
+    5 min           10 min       1 hour       1–2 weeks       as needed
+       │               │            │         (needs an eng)      │
+       ▼               ▼            ▼             ▼               ▼
+  Read §1–3       §4 Install   §4, then      §10 Server     §11 Under the
+                  then say     share this    mode           hood
+                  "set up the  link; each
+                  CS engine"   person runs
+                               setup
+```
 
-**Claude app / Cowork (paid plans):** open *Customize → Plugins*, choose *Add marketplace*, enter `kyle-olmstead/cs-claude-engine`, then add the **cs-engine** plugin from that marketplace. (You can also upload a packaged `cs-engine.plugin` as a custom plugin — build it from the repo root with `zip -r cs-engine.plugin . -x '.git/*'`.)
+| If you are… | Start with | What you'll have | Time |
+|---|---|---|---|
+| **A CEO or exec** deciding if this is worth the team's time | §1–3, then ask your CS lead to run it on five accounts | A clear picture of what it does, what it won't do, and what it needs from you | 5 min |
+| **A CSM** with a set of accounts | §4 Install → say *"set up the CS engine"* → say *"review my book"* | A ranked list of who needs attention today, why, and the plan for each | 10 min |
+| **A Head of CS / VP** rolling it out | Same on your own accounts, then §7 (the operating rhythm) and share this link | Everyone on one health score, one set of playbooks, one weekly routine | 1 hour |
+| **CS Ops / RevOps** | §10 Server mode | Nightly runs across every account, history in your warehouse, an audit trail | 1–2 weeks |
+| **An engineer or data person** | §11 → `docs/01_ARCHITECTURE.md` | The full design, every formula, every prompt | As long as you like |
 
-**Claude Code:**
+A few words used throughout: a **CSM** is a Customer Success Manager, the person responsible for keeping customers happy and renewing. Their **book** is the set of accounts they look after. A **champion** is your main internal advocate inside a customer's company. A **health score** is a 0–100 estimate of how likely an account is to stay. Full list in §12.
 
+---
+
+## 1. The problem it solves
+
+A CSM typically looks after 30 to 300 accounts. The warning signs that a customer is drifting — logins dropping, the champion leaving, a support ticket aging, a lukewarm survey answer — are spread across five or six systems. Nobody has time to check all of them for every account.
+
+So problems get noticed late, usually in the renewal conversation, when the options are already bad. Meanwhile, customers quietly outgrowing their plan go unnoticed too.
+
+This engine does the checking — every day if you schedule it, or whenever you ask.
+
+---
+
+## 2. What it does, in plain English
+
+1. **Watches every account for trouble.** Each account gets a health score (green / yellow / red) built from usage, support, sentiment, relationships, and contract facts. The score always comes with its explanation — which factor moved it and by how much — never a mystery number.
+2. **Explains why, not just what.** When an account turns red, the engine works out the cause (lost champion, incomplete onboarding, reliability problems, doubt about value, a competitor…) and names the single action most likely to fix it.
+3. **Writes the plan.** A renewal plan with scenarios, who to talk to, what to ask, and dates — plus a draft of the first email for you to edit and send, or not.
+4. **Finds growth.** Accounts using more than they bought, teams hitting feature limits, departments never offered the product. Sized against your price book, with the likely sponsor and the objection to expect.
+5. **Preps your business reviews.** A one-page executive narrative, a slide-by-slide script, an ROI table where every number shows its source, and the pre-read email.
+6. **Reports the numbers.** Net and gross revenue retention, logo vs. dollar churn, expansion pipeline, revenue per CSM — with the formulas written down so the numbers can be defended.
+
+**What it will never do:** email a customer · change a CRM record without your approval · state a number it can't trace to your data · propose a discount or a contract term.
+
+---
+
+## 3. How it works (one picture)
+
+```
+  YOUR TOOLS                    THE ENGINE                                    YOU
+  ──────────                    ──────────                                    ───
+  CRM             ┐
+  Support desk    │     1. Builds one complete picture of the account
+  Call recordings ├──►  2. Scores its health and explains the score
+  Surveys         │     3. Spots the problem or the opportunity
+  Product usage   │     4. Writes the plan and drafts the email      ──►   approve · edit · reject
+  Billing         ┘                                                               │
+                                                                                  ▼
+                        5. Only then: creates the CRM task, posts the alert, saves the email draft
+```
+
+Every recommendation carries its evidence — the exact fields in your data it was based on. If the engine can't find the data, it says so and lowers its confidence instead of guessing.
+
+---
+
+## 4. Install (10 minutes)
+
+You need a paid Claude plan (Pro, Max, Team, or Enterprise) with your CRM connected. It works best in **Claude Code** or the **Claude desktop app with a working folder**, where it can save each account's file and run its scoring script. In a plain web chat it still works, but it scores by hand and can't keep history between conversations.
+
+**In the Claude app:** open **Customize → Plugins → Add marketplace**, enter `kyle-olmstead/cs-claude-engine`, then add the **cs-engine** plugin from that marketplace. (The repository is called *cs-claude-engine*; the plugin inside it is called *cs-engine*. Same thing.)
+
+**In Claude Code:**
 ```
 /plugin marketplace add kyle-olmstead/cs-claude-engine
 /plugin install cs-engine@cs-engine
 ```
 
-Then, in any conversation:
+Then, in any conversation: **"set up the CS engine."**
 
-```
-set up the CS engine
-```
+Setup looks at which tools you have connected, sorts them into the roles the engine needs (CRM, support desk, call recorder, surveys, product usage, billing, enrichment, chat, email, calendar, documents), confirms the mapping with you, and scores the sample account to prove everything works. Only the CRM is required. Each additional connection sharpens the picture; if something is missing, the engine tells you what it can't see and what that costs in confidence.
 
-The `cs-setup` skill inventories your connectors, maps each to a category the engine needs (CRM, support desk, conversation intelligence, survey tool, product analytics or warehouse, billing, enrichment, chat, email, calendar, documents), confirms the mapping with you, saves it as your *stack profile*, and scores the bundled sample account to prove the install. From then on every skill reads that profile; a missing category is reported as a data-quality flag with its cost in confidence, never silently invented. Full category reference: [`CONNECTORS.md`](CONNECTORS.md). Field-by-field source map: [`skills/customer-360/references/field-sources.md`](skills/customer-360/references/field-sources.md).
+---
 
-**Skills you get:**
+## 5. What it needs from you
 
-| Say… | Skill | What happens |
+The engine is only as good as three things in your CRM. Thirty minutes here is worth more than any setting:
+
+| Make sure your CRM has… | Because | Where |
 |---|---|---|
-| "set up the CS engine", "what's connected" | `cs-setup` | Connector inventory → stack profile |
-| "how healthy is Contoso", "pull the 360 on Contoso" | `customer-360` | Schema-valid Customer 360 from your connectors + explained health score |
-| "review my book", "what's at risk", or on a schedule | `book-review` | Prioritized digest across your accounts, P0 first, with the playbook to run |
-| "Contoso just went red", "our champion left" | `red-account-turnaround` | Churn RCA → save plan → exec outreach draft (PB-RET-01) |
-| "prep the Contoso renewal" | `renewal-defense` | Scenarios, stakeholder asks, dated plan, kickoff draft (PB-RET-02) |
-| "Contoso is stuck in onboarding" | `ttv-acceleration` | Blocker diagnosis, owners, milestone date, check-in draft (PB-ADP-01) |
-| "what features is Contoso not using" | `feature-depth-audit` | Peer comparison, ranked recommendations, adoption narrative (PB-ADP-02) |
-| "where can we expand Contoso" | `expansion-whitespace` | Readiness gate, sized plays, sponsor, objections, sales handoff (PB-EXP-01/02) |
-| "prep the Contoso EBR" | `ebr-generator` | Narrative, slide script, ROI table, pre-work, pre-read email (PB-CAD-01) |
-| "what's our NRR by segment" | `retention-report` | NRR/GRR/churn decomposition, velocity, ARR per CSM, CRC, LTV:CAC, QBR velocity |
+| **A flag on contacts for champion and decision-maker** | Champion loss is the #1 churn signal; the engine can't detect what isn't marked | Contact property / buying role |
+| **Accurate renewal dates and annual revenue on each account** | Every renewal and retention play keys off these | Company / account properties |
+| **Your price book** (or just list prices per seat and tier) | Expansion sizing uses placeholder prices until it has yours | A document, or your CRM's product library |
 
-Every skill ends the same way: it shows what it found with evidence paths, then asks which proposed writes you want — CRM property, task, Slack alert, email *draft*, document. Nothing reaches a customer or changes a CRM field until you say so.
+If you'll let the engine write back to the CRM (it asks first, every time), create four custom text fields on the account: `cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`. Skip this and it still works — it just reports instead of writing.
+
+**One honest note on the health score.** It ships with sensible default weights, and they are a starting point, not a verdict. After one quarter, check: did red accounts actually churn more than green ones? If not, the weights need adjusting to your business. The engine includes the method (`docs/02_METRICS_TAXONOMY.md`, section B1); it takes an afternoon.
 
 ---
 
-## What it does
+## 6. What to say to it
 
-| Pillar | Lagging / Leading | Metrics the engine computes and reasons over |
-|---|---|---|
-| **Retention & Revenue** | Lagging | NRR, GRR, logo churn, dollar churn, net dollar churn, expansion pipeline velocity |
-| **Adoption & Product Health** | Leading | Weighted multi-variable Health Score, Time-to-Value, DAU/MAU stickiness, feature depth & breadth, seat utilization and 90-day drift |
-| **Sentiment & Alignment** | Leading | NPS/CSAT qualitative extraction, transcript sentiment, Executive Champion Risk Index, multithreading depth |
-| **Capacity & Efficiency** | Operational | ARR per CSM, Customer Retention Cost, LTV:CAC, QBR/EBR completion velocity |
+| Say… | What happens |
+|---|---|
+| "set up the CS engine" | Finds your connected tools and configures itself |
+| "review my book" | Ranks all your accounts: who needs attention today, why, which play to run. Schedule it to run daily. |
+| "how healthy is Contoso?" | Builds the full picture of one account and explains its health score |
+| "Contoso just went red" / "our champion at Contoso left" | Root-cause analysis → save plan → executive outreach draft |
+| "prep the Contoso renewal" | Renewal scenarios, stakeholder asks, dated plan, kickoff email draft |
+| "Contoso is stuck in onboarding" | Finds the blocker, assigns owners, sets a go-live date, drafts the check-in |
+| "what features is Contoso not using?" | Compares to similar healthy customers and ranks what to enable next |
+| "where can we expand Contoso?" | Sized growth plays, the sponsor, the objection, the sales handoff |
+| "prep the Contoso business review" | Narrative, slide script, ROI table, pre-read email |
+| "what's our net revenue retention?" | Retention and efficiency metrics with the formulas shown |
 
-Each metric has a formal definition in [`docs/02_METRICS_TAXONOMY.md`](docs/02_METRICS_TAXONOMY.md), a SQL implementation in [`sql/dbt_marts/`](sql/dbt_marts/), a Python implementation in [`src/models/`](src/models/), and a prompt that teaches Claude how to interpret it in [`prompts/`](prompts/).
-
----
-
-## The operating loop
-
-1. **Transform** — dbt builds `mart_customer_health_daily` and `mart_retention_nrr_grr` from CRM, billing, telemetry, support, survey, and conversation sources.
-2. **Assemble** — `src/orchestrator.py` builds one `Customer360` document per account (validated against `src/schemas/customer_360.json`), enriching stakeholders through Clay and parsing recent call transcripts.
-3. **Score** — `src/models/health_score.py` computes the weighted health score with full component-level explainability and hard-gate overrides (champion departed, payment past due, open P1).
-4. **Trigger** — the orchestrator evaluates playbook trigger conditions (see [`docs/03_PLAYBOOKS_MASTER_INDEX.md`](docs/03_PLAYBOOKS_MASTER_INDEX.md)) and selects the prompts to run.
-5. **Reason** — Claude is called with a cached system prompt, the Customer 360 as context, and a forced tool call whose `input_schema` is `src/schemas/playbook_action.json`. The response is a `PlaybookAction`: diagnosis, evidence, confidence, CRM writes, drafted communications, and tasks.
-6. **Act** — validated actions route to adapters (HubSpot, Salesforce, Gainsight, Clay, Slack). Anything that touches a customer or changes a forecast passes through a human approval gate.
-7. **Learn** — every action and its outcome (renewed, churned, expanded, no-op) is logged so weights, thresholds, and prompts are recalibrated quarterly.
+Every one ends the same way: it shows what it found and asks which actions you want — a CRM task, a Slack alert, an email *draft*, a saved document. Nothing happens until you say yes. A full sample conversation is in [`examples/demo_conversation.md`](examples/demo_conversation.md).
 
 ---
 
-## Repository layout
+## 7. The operating rhythm (this is the part that makes it work)
+
+Tools don't change outcomes; routines do. The engine is built around this cadence:
+
+| When | Who | What | Time |
+|---|---|---|---|
+| **Daily** | Each CSM | Read the scheduled book-review digest. Act on anything marked P0. | 5 min |
+| **Weekly** | CSM, Monday | "review my book" in full; run the playbook on the top two flagged accounts; approve or reject the proposed actions | 20–30 min |
+| **Weekly** | CS leader | Red-account review using the engine's root-cause analyses instead of status updates | 30 min |
+| **Before every renewal / business review** | CSM | "prep the renewal" or "prep the business review" | 15 min vs. the usual 4–6 hours |
+| **Quarterly** | CS Ops or leader | Validate the health score against what actually churned; adjust weights; review which triggers were ignored and why | one afternoon |
+
+A team that only does the weekly 20 minutes gets most of the value. A team that skips the quarterly check gets a score nobody trusts within six months.
+
+---
+
+## 8. A worked example
+
+*The account below is made up. The reasoning is exactly what the engine does.*
+
+Contoso Logistics, a $240,000-a-year enterprise customer, 95 days from renewal. Health dropped from 79 to 60 in a month.
+
+The engine notices that the champion's enrichment data now shows a different employer, that product usage is actually fine (the Finance team is active daily), and that only two people at Contoso talk to us. Its diagnosis: this is not a product problem; it is an *ownership vacuum* — nobody at Contoso owns the renewal anymore. Its plan: ask the executive sponsor to name a successor within a week, add two more contacts in the champion's department, and run a business review before day 60. It drafts a 140-word note to the sponsor asking for 30 minutes and a name, and lists the seven data points it relied on.
+
+The CSM edits one sentence, sends it, and the next conversation starts from the cause instead of the symptom.
+
+---
+
+## 9. Trust and control
+
+- **You approve everything customer-facing.** Emails are drafts. CRM changes are proposals. The engine has no way to send mail.
+- **Every number has a source.** Each recommendation lists the exact data fields it relied on; claims without evidence are rejected automatically.
+- **It knows what it doesn't know.** Missing data becomes a flag and lower confidence, never a guess.
+- **Where your data goes.** The engine reads through connectors you already authorized in Claude. Claude processes that data under your plan's terms, the same as any other Claude conversation. Working files stay in your own folder. Nothing is sent to the author of this repository.
+- **No pricing, ever.** It will flag that a commercial conversation is needed. The terms are yours.
+
+---
+
+## 10. For bigger teams: server mode
+
+The same engine can run as a scheduled job against your data warehouse — every account, every night, with history and an audit log — writing back to the CRM through the same approval rules. It ships with the warehouse models (dbt), the scoring code, and the orchestration script. This path needs an engineer and takes one to two weeks: [`docs/00_SERVER_QUICKSTART.md`](docs/00_SERVER_QUICKSTART.md).
+
+---
+
+## 11. Under the hood (for the technical reader)
 
 ```
 cs-claude-engine/
-├── README.md                              ← you are here
-├── requirements.txt
-├── .claude-plugin/
-│   ├── plugin.json                        ← plugin manifest (the repo root is the plugin)
-│   └── marketplace.json                   ← one-plugin marketplace so the repo can be added by owner/repo
-├── CONNECTORS.md                          ← tool categories (~~crm, ~~support desk, …) and what each unlocks
-├── skills/                                ← plugin mode: one skill per workflow, each driving the prompts below
-│   ├── cs-setup/                          ← connector inventory → stack profile
-│   ├── customer-360/                      ← assembles the 360 from connectors (+ references/field-sources.md, playbook-protocol.md)
-│   ├── book-review/                       ← digest across the book; schedulable
-│   ├── red-account-turnaround/ · renewal-defense/ · ttv-acceleration/
-│   ├── feature-depth-audit/ · expansion-whitespace/ · ebr-generator/
-│   └── retention-report/
-├── config/
-│   └── health_weights.json                ← single source of truth for score weights (exported from dbt vars)
-├── docs/
-│   ├── 01_ARCHITECTURE.md                 ← layers, data flow, MCP server, deployment, security
-│   ├── 02_METRICS_TAXONOMY.md             ← every metric: definition, formula, thresholds, gotchas
-│   └── 03_PLAYBOOKS_MASTER_INDEX.md       ← trigger → playbook → prompt → artifact registry (incl. QBR/EBR automation)
-├── prompts/
-│   ├── core/
-│   │   ├── system_csm_orchestrator.prompt ← the agent's standing system prompt
-│   │   └── sentiment_analyzer.prompt      ← NPS/CSAT/transcript qualitative extraction
-│   ├── retention/
-│   │   ├── churn_risk_rca.prompt          ← root-cause analysis for red accounts
-│   │   └── renewal_defense_playbook.prompt← renewal save plan generator
-│   ├── adoption/
-│   │   ├── ttv_acceleration.prompt        ← onboarding accounts behind TTV target
-│   │   └── feature_depth_audit.prompt     ← feature adoption vs. segment benchmark
-│   └── expansion/
-│       ├── whitespace_expansion_finder.prompt ← tier/seat/module whitespace
-│       └── executive_ebr_generator.prompt     ← C-suite EBR script and deck outline
-├── src/
-│   ├── orchestrator.py                    ← anthropic SDK orchestration: feeds → Claude → actions (+ --triggers-only, --offline)
-│   ├── validate.py                        ← schema + evidence-integrity + approval-floor validator (used by the skills)
-│   ├── models/
-│   │   ├── health_score.py                ← weighted health score with explainability
-│   │   └── metrics_calculator.py          ← NRR/GRR/churn/velocity/TTV/CRC/LTV:CAC/QBR velocity
-│   ├── schemas/
-│   │   ├── customer_360.json              ← input contract (JSON Schema 2020-12)
-│   │   └── playbook_action.json           ← output contract for every Claude call
-│   └── tools/
-│       ├── clay_crm_enrichment.py         ← Clay enrichment + HubSpot/Salesforce sync + champion-change detection
-│       └── call_transcript_parser.py      ← Gong/Zoom/VTT parsing → Claude sentiment & risk signals
-├── sql/
-│   └── dbt_marts/
-│       ├── mart_customer_health_daily.sql ← daily per-account health components and score
-│       └── mart_retention_nrr_grr.sql     ← monthly + trailing-12 NRR/GRR/logo/dollar churn by segment
-├── playbooks/
-│   ├── enterprise_at_risk_turnaround.md   ← red account turnaround (health drop / champion loss)
-│   └── low_touch_digital_expansion.md     ← PLG / digital-tier expansion discovery
-└── examples/
-    └── sample_customer_360.json           ← a complete, schema-valid Customer 360 for local runs
+├── skills/        10 plugin skills — what runs when you talk to it
+├── prompts/       8 versioned prompts — how the engine reasons (guardrails built in)
+├── src/           Python — health score, retention math, orchestrator, validator, CRM/enrichment/transcript tools
+├── src/schemas/   The two contracts: customer_360.json (input) and playbook_action.json (output)
+├── sql/           dbt models for daily health and monthly/trailing-12 NRR & GRR
+├── docs/          Server quickstart · architecture · metrics (every formula) · playbook index
+├── playbooks/     Long-form operating playbooks with triggers, timelines, roles, exit criteria
+├── CONNECTORS.md  How tool categories map to real products
+└── examples/      A complete sample account and a sample conversation
 ```
+
+Every technical document opens with a plain-English summary so you can stop reading when you've learned what you came for.
 
 ---
 
-## Quickstart (server mode)
+## 12. Words used here
 
-### Prerequisites
-
-* Python 3.10+
-* An Anthropic API key (`ANTHROPIC_API_KEY`)
-* A warehouse with the staging models referenced in `sql/dbt_marts/` (Snowflake, BigQuery, Databricks, Postgres, or Redshift — the SQL is written to the ANSI subset dbt compiles portably, with the two dialect-specific functions isolated and commented)
-* Optional: HubSpot private-app token, Salesforce connected-app credentials, Clay webhook URL, Slack bot token
-
-### Install
-
-```bash
-git clone https://github.com/kyle-olmstead/cs-claude-engine.git
-cd cs-claude-engine
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Configure
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-export CLAUDE_MODEL=claude-sonnet-5-5          # any current Claude model id; override per prompt via its header
-export HUBSPOT_ACCESS_TOKEN=pat-na1-...       # optional
-export CLAY_WEBHOOK_URL=https://api.clay.com/v3/sources/webhook/...   # optional
-export SLACK_BOT_TOKEN=xoxb-...               # optional
-export SLACK_ALERT_CHANNEL=#cs-alerts         # optional
-export CSE_DRY_RUN=true                       # default: never write to CRM unless explicitly disabled
-```
-
-### Run against the bundled example
-
-```bash
-# No credentials required:
-python -m src.models.health_score examples/sample_customer_360.json      # score + component breakdown + drift check
-python -m src.models.metrics_calculator --demo                            # NRR/GRR/churn/velocity/TTV/ECRI/CRC/LTV:CAC/QBR
-python -m src.orchestrator --input examples/sample_customer_360.json --offline --out ./out
-#   --offline exercises the whole pipeline (validation → triggers → schema-bound actions → files)
-#   with a deterministic stub in place of Claude, so CI and demos need no API key.
-
-# With ANTHROPIC_API_KEY set — real Claude reasoning, still no external writes:
-python -m src.orchestrator --input examples/sample_customer_360.json --dry-run --out ./out
-```
-
-### Run against your warehouse
-
-```bash
-# 1. Build the marts
-dbt run --select mart_customer_health_daily mart_retention_nrr_grr
-
-# 2. Export today's Customer 360 feed (one JSON object per line) from your warehouse into ./feeds/
-#    The orchestrator accepts .json, .jsonl, or a directory of either.
-
-# 3. Orchestrate the whole book
-python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out
-```
-
-Outputs land in `./out/<account_id>/<playbook_id>.action.json` plus any drafted communications as `.md`, and a run-level `run_summary.json` listing every alert by priority.
+| Term | Meaning |
+|---|---|
+| **CSM** | Customer Success Manager — responsible for keeping customers happy and renewing |
+| **Book** | The accounts one CSM looks after |
+| **Health score** | A 0–100 estimate of how likely an account is to stay and grow |
+| **Champion** | Your main internal advocate inside the customer's company |
+| **Executive sponsor** | The senior person on the customer side who backed the purchase |
+| **Churn** | Customers (or revenue) that leave |
+| **NRR / GRR** | Net / gross revenue retention — how much of last year's revenue from existing customers you still have, with and without growth counted |
+| **EBR / QBR** | Executive / quarterly business review — the periodic meeting where you show the customer what they got |
+| **Customer 360** | The single data picture of an account the engine builds before deciding anything |
+| **Playbook** | "When X happens, do Y" — the engine's repeatable responses to specific situations |
 
 ---
 
-## How Claude is used
+## FAQ
 
-**One contract, every call.** Every prompt in `prompts/` ends with an `<output_format>` block that points at `src/schemas/playbook_action.json` (or, for the sentiment analyzer, its own embedded schema). The orchestrator calls the Messages API with `tools=[{"name": "emit_playbook_action", "input_schema": <that schema>}]` and `tool_choice={"type": "tool", "name": "emit_playbook_action"}`. Claude cannot return prose; it must return a conforming object. The orchestrator validates with `jsonschema` and rejects anything that fails.
+**Does it need an API key?** No. Plugin mode uses the connectors already in your Claude account. Server mode does.
 
-**Prompt files are versioned artifacts.** Each `.prompt` file has a YAML header (`id`, `version`, `model`, `temperature`, `max_tokens`, `variables`, `output_schema`) followed by the system prompt body, written with explicit XML sections:
+**I only have a CRM. Is that enough?** Yes. You'll get health scores and every playbook at reduced confidence, and the engine tells you which extra connection would help most.
 
-```
-<role>            who Claude is and the standard it is held to
-<context>         what the data means, how the business defines its metrics
-<inputs>          the exact variables injected, with their shapes
-<analysis_steps>  the ordered reasoning Claude must perform before emitting
-<guardrails>      what it must never do (invent numbers, promise discounts, contact customers directly, …)
-<output_format>   the schema and field-level rules
-<examples>        worked example(s) of the expected output
-```
+**Does it work with HubSpot? Salesforce? Zendesk? Gong?** It works with any tool that has a Claude connector — it's built around categories, not brands. See [`CONNECTORS.md`](CONNECTORS.md). If a tool you use has no connector yet, the engine works without it and says what it's missing.
 
-**Prompt caching.** The system prompt body and the playbook registry are sent as cached system blocks; only the Customer 360 and the instruction change per account. Across a 300-account book, this cuts input cost by roughly 80%.
+**Can my whole team use it?** Yes. Each person installs it and runs setup once; everyone gets the same scoring and playbooks.
 
-**MCP.** The same tool definitions the orchestrator uses are exposed by an MCP server (spec in `docs/01_ARCHITECTURE.md` §6) so a CSM can ask Claude in their IDE, Slack, or desktop app questions like *"why did Acme go yellow this week?"* and get the identical, schema-bound reasoning the batch job uses.
+**Will it ever email my customers?** No. There is no send path. It writes drafts for you.
 
----
+**Is the health score accurate?** It's a well-reasoned default. Validate it against your own churn after one quarter (§5) — that's true of every health score ever built.
 
-## Playbooks
-
-| Playbook | Trigger (any) | Prompts invoked | Primary artifact |
-|---|---|---|---|
-| **Enterprise at-risk turnaround** | Health < 50; health drop ≥ 15 pts in 30d; champion departed; open P1 > 5 days; renewal ≤ 120d and health < 65 | `churn_risk_rca` → `renewal_defense_playbook` → `sentiment_analyzer` | RCA + 30-day save plan + exec outreach draft + internal escalation brief |
-| **Low-touch digital expansion** | Seat utilization ≥ 85%; feature-gate hits ≥ 3 in 14d; PQL score ≥ 70; DAU/MAU ≥ 0.35 | `whitespace_expansion_finder` → `feature_depth_audit` | Expansion brief + in-app/email nudge sequence + sales handoff record |
-| **QBR / EBR automation** | 30 days before scheduled EBR; or renewal ≤ 180d and no EBR in 2 quarters | `feature_depth_audit` → `executive_ebr_generator` | Executive narrative + slide-by-slide script + ROI table + pre-read email |
-| **TTV acceleration** | Onboarding account past p50 TTV for its segment with no value milestone | `ttv_acceleration` | Unblock plan + milestone owner map + customer check-in draft |
-
-Full trigger logic, SLAs, roles, and exit criteria: [`docs/03_PLAYBOOKS_MASTER_INDEX.md`](docs/03_PLAYBOOKS_MASTER_INDEX.md) and the two long-form playbooks in [`playbooks/`](playbooks/).
-
----
-
-## Guardrails and human-in-the-loop
-
-* **Dry-run by default.** `CSE_DRY_RUN=true` unless explicitly disabled. Dry runs produce every artifact but write nothing to external systems.
-* **Approval gates.** Any action with `requires_human_approval: true` (all customer-facing communications, any forecast or renewal-probability change, any discount or commercial term) is written to the approval queue, never executed.
-* **No invented numbers.** Prompts forbid fabrication; every numeric claim in a Claude output must cite a field path in the Customer 360 (`evidence[].source_path`). The orchestrator spot-checks a sample of cited paths against the input document and fails the action if a path does not exist.
-* **PII minimization.** Transcripts and survey verbatims are redacted of emails, phone numbers, and payment identifiers before reaching Claude (see `call_transcript_parser.redact_pii`).
-* **Idempotent writes.** Every CRM write carries a deterministic `external_id` (`cse:<account_id>:<playbook_id>:<run_date>`) so re-runs update rather than duplicate.
-* **Audit trail.** Every Claude request/response pair is logged with prompt id, prompt version, model, token counts, and the SHA-256 of the input document.
-
----
-
-## Extending
-
-* **Add a metric:** define it in `02_METRICS_TAXONOMY.md`, implement in `metrics_calculator.py` and the relevant mart, add the field to `customer_360.json`, reference it in the prompt that should reason over it.
-* **Add a playbook:** register it in `03_PLAYBOOKS_MASTER_INDEX.md`, add the trigger to `orchestrator.PLAYBOOK_TRIGGERS`, write the prompt, add its `playbook_id` to the enum in `playbook_action.json`.
-* **Add a CRM:** implement the `CRMAdapter` protocol in `clay_crm_enrichment.py` (`find_contact`, `upsert_contact`, `create_task`, `update_account_properties`).
+**What does it cost?** The software is free (Apache 2.0). You need a paid Claude plan.
 
 ---
 
 ## License
 
-Apache 2.0. Use it, fork it, ship it. If you improve a prompt, the community would love the PR.
+Apache 2.0 — use it, change it, ship it. Improvements to the prompts and playbooks are the most valuable pull requests.

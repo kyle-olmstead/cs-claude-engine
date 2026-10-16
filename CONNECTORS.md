@@ -1,5 +1,7 @@
 # Connectors
 
+> **In plain English.** The engine doesn't care which brands you use. It thinks in roles — "the CRM," "the support desk," "the call recorder" — and this page shows how it maps whatever you have connected onto those roles, what each one unlocks, and what you lose when something's missing. Only the CRM is required.
+
 ## How tool references work
 
 Plugin files use `~~category` as a placeholder for whatever tool you have connected in that category. `~~crm` means HubSpot, Salesforce, Gainsight, or any other CRM with an MCP connector; `~~conversation intelligence` means Gong, Zoom, Chorus, Fireflies, or whatever records your customer calls.

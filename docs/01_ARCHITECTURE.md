@@ -1,5 +1,7 @@
 # 01 — Architecture
 
+> **In plain English.** How the engine is built, in five layers: where data comes from, how it's cleaned, how the account picture is assembled, how Claude reasons about it, and how actions get back into your tools — plus the feedback loop that keeps the health score honest. If you're not an engineer, read the table in §0 and stop; it tells you the two ways the engine can run and which one you're on.
+
 CS-Claude Engine is a five-layer system. Each layer has a single responsibility, a typed interface to the next, and can be replaced independently. This document specifies every layer, the data contracts between them, the MCP server, the deployment topology, and the security model.
 
 ---

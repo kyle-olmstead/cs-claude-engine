@@ -1,5 +1,7 @@
 # 03 — Playbooks Master Index
 
+> **In plain English.** A playbook is "when X happens, do Y." This is the list of X's the engine watches for — an account turning red, a champion leaving, a renewal approaching, onboarding stalling, a customer outgrowing their plan, a business review coming due — and the Y it does for each: what it produces, who owns the outcome, how fast, and how we know it's finished. The registry table is the whole story; the sections below are the detail.
+
 The registry of every automated loop the engine runs. For each playbook: the trigger predicates the orchestrator evaluates, the prompts it chains, the artifacts it produces, who owns the outcome, the SLA, and the exit condition that closes the loop. Trigger predicates are written in the same pseudo-syntax the orchestrator's `PLAYBOOK_TRIGGERS` table implements; field names are JSON paths into the Customer 360.
 
 Priority order when multiple playbooks fire on one account in one run: **P0 retention → P1 adoption → P2 cadence → P3 expansion**. A red account never receives an expansion play in the same run.

@@ -1,5 +1,7 @@
 # Playbook PB-EXP-01 — Low-Touch Digital Expansion
 
+> **In plain English.** How to grow hundreds of small accounts you can't call individually. The engine finds the ones already outgrowing their plan — more people active than seats bought, users bumping into features they don't have — and sends one honest, evidence-based nudge, never more than two in two weeks, and never to an account with an open problem. Bigger opportunities get handed to a person. §7 (what a nudge is allowed to say) is the part worth reading even if you never run the playbook.
+
 **Pillar:** Expansion · **Priority:** P3 (P2 when a `now` play is ≥ 20% of current ARR) · **Cooldown:** 30 days · **Owner:** Digital programs (CSM pooled); sales-assist above threshold · **Prompt chain:** `expansion.whitespace_expansion_finder` (+ `adoption.feature_depth_audit` as a sub-step when feature-gate hits are the trigger)
 
 This playbook finds expansion that is already happening in the product and turns it into contracted ARR without a human touch until one is warranted. It runs across the SMB and digital segments — hundreds or thousands of accounts per CSM — so every step is automated by default and a human enters only when the indicative ARR crosses the sales-assist threshold or the customer replies.
