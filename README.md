@@ -133,6 +133,8 @@ If you'll let the engine write back to the CRM (it asks first, every time), crea
 | "prep the Contoso business review" | Narrative, slide script, ROI table, pre-read email |
 | "what's our net revenue retention?" | Retention and efficiency metrics with the formulas shown |
 
+*"Contoso" stands for any account name in your CRM — say whatever your customer is called. The engine looks the name up in your CRM, asks if more than one record matches, and tells you if none does.*
+
 Every one ends the same way: it shows what it found and asks which actions you want — a CRM task, a Slack alert, an email *draft*, a saved document. Nothing happens until you say yes. A full sample conversation is in [`examples/demo_conversation.md`](examples/demo_conversation.md).
 
 ---
