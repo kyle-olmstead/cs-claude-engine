@@ -26,7 +26,7 @@ The engine runs two ways from the same files:
 
 The repository is itself a Claude plugin and a one-plugin marketplace. Nobody needs to clone it or set an API key; the plugin uses the connectors already authorized in your Claude account.
 
-**Claude app / Cowork (paid plans):** open *Customize → Plugins*, choose *Add marketplace*, enter `kyle-olmstead/cs-claude-engine`, then add the **cs-engine** plugin from that marketplace. (You can also upload the packaged `cs-engine.plugin` file from the Releases page as a custom plugin.)
+**Claude app / Cowork (paid plans):** open *Customize → Plugins*, choose *Add marketplace*, enter `kyle-olmstead/cs-claude-engine`, then add the **cs-engine** plugin from that marketplace. (You can also upload a packaged `cs-engine.plugin` as a custom plugin — build it from the repo root with `zip -r cs-engine.plugin . -x '.git/*'`.)
 
 **Claude Code:**
 
