@@ -5,40 +5,134 @@
   "description": "The complete, per-account input document assembled daily from the warehouse. This is the only source of truth for a Claude call. Every field Claude may cite as evidence lives here. Dates are ISO-8601 (YYYY-MM-DD); timestamps are RFC 3339 UTC. Monetary values are in the reporting currency, annualized unless the field name says otherwise.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "as_of_date", "account", "contract", "health", "usage", "support", "sentiment", "relationship", "opportunities", "whitespace", "cadence", "lifecycle", "actions_last_30d", "benchmarks"],
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "account",
+    "contract",
+    "health",
+    "usage",
+    "support",
+    "sentiment",
+    "relationship",
+    "opportunities",
+    "whitespace",
+    "cadence",
+    "lifecycle",
+    "actions_last_30d",
+    "benchmarks"
+  ],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.0" },
-    "as_of_date": { "type": "string", "format": "date" },
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date"
+    },
     "account": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "name", "segment", "csm_owner_id", "csm_owner_name", "created_at"],
+      "required": [
+        "account_id",
+        "name",
+        "segment",
+        "csm_owner_id",
+        "csm_owner_name",
+        "created_at"
+      ],
       "properties": {
-        "account_id": { "type": "string", "minLength": 1 },
-        "name": { "type": "string", "minLength": 1 },
-        "segment": { "type": "string", "enum": ["enterprise", "mid_market", "smb", "digital"] },
-        "industry": { "type": "string" },
-        "region": { "type": "string" },
-        "employee_count": { "type": "integer", "minimum": 0 },
-        "fiscal_year_end": { "type": "string", "description": "MM-DD" },
-        "csm_owner_id": { "type": "string" },
-        "csm_owner_name": { "type": "string" },
-        "ae_owner_id": { "type": "string" },
-        "created_at": { "type": "string", "format": "date" },
-        "product_line": { "type": "string" },
-        "crm_system": { "type": "string", "enum": ["hubspot", "salesforce", "gainsight", "other"] },
-        "cse_opt_out_playbooks": { "type": "array", "items": { "type": "string" } },
+        "account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "segment": {
+          "type": "string",
+          "enum": [
+            "enterprise",
+            "mid_market",
+            "smb",
+            "digital"
+          ]
+        },
+        "industry": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "employee_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fiscal_year_end": {
+          "type": "string",
+          "description": "MM-DD"
+        },
+        "csm_owner_id": {
+          "type": "string"
+        },
+        "csm_owner_name": {
+          "type": "string"
+        },
+        "ae_owner_id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "product_line": {
+          "type": "string"
+        },
+        "crm_system": {
+          "type": "string",
+          "enum": [
+            "hubspot",
+            "salesforce",
+            "gainsight",
+            "other"
+          ]
+        },
+        "cse_opt_out_playbooks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "team": {
           "type": "array",
           "description": "Vendor-side people assigned to the account.",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["role", "name"],
+            "required": [
+              "role",
+              "name"
+            ],
             "properties": {
-              "role": { "type": "string", "enum": ["csm", "ae", "implementation_manager", "solutions_engineer", "support_lead", "exec_sponsor_internal"] },
-              "name": { "type": "string" },
-              "user_id": { "type": "string" }
+              "role": {
+                "type": "string",
+                "enum": [
+                  "csm",
+                  "ae",
+                  "implementation_manager",
+                  "solutions_engineer",
+                  "support_lead",
+                  "exec_sponsor_internal"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "user_id": {
+                "type": "string"
+              }
             }
           }
         },
@@ -48,17 +142,63 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["outcome", "unit", "baseline"],
+            "required": [
+              "outcome",
+              "unit",
+              "baseline"
+            ],
             "properties": {
-              "outcome": { "type": "string" },
-              "unit": { "type": "string" },
-              "baseline": { "type": ["number", "null"] },
-              "current": { "type": ["number", "null"] },
-              "measured_at": { "type": ["string", "null"], "format": "date" },
-              "source": { "type": ["string", "null"] },
-              "value_formula": { "type": ["string", "null"] },
-              "attribution_share": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-              "unit_cost": { "type": ["number", "null"] }
+              "outcome": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "baseline": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "current": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "measured_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "value_formula": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "attribution_share": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              },
+              "unit_cost": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
             }
           }
         }
@@ -67,63 +207,235 @@
     "contract": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["arr", "term_start", "term_end", "days_to_renewal", "seats_purchased", "payment_days_past_due", "contraction_flag_90d"],
+      "required": [
+        "arr",
+        "term_start",
+        "term_end",
+        "days_to_renewal",
+        "seats_purchased",
+        "payment_days_past_due",
+        "contraction_flag_90d"
+      ],
       "properties": {
-        "arr": { "type": "number", "minimum": 0 },
-        "arr_90d_ago": { "type": ["number", "null"], "minimum": 0 },
-        "currency": { "type": "string", "default": "USD" },
-        "term_start": { "type": "string", "format": "date" },
-        "term_end": { "type": "string", "format": "date" },
-        "term_months": { "type": "integer", "minimum": 1 },
-        "days_to_renewal": { "type": "integer" },
-        "auto_renew": { "type": "boolean" },
-        "seats_purchased": { "type": "integer", "minimum": 0 },
-        "tier": { "type": "string" },
-        "modules_owned": { "type": "array", "items": { "type": "string" } },
-        "payment_days_past_due": { "type": "integer", "minimum": 0 },
-        "contraction_flag_90d": { "type": "boolean" },
-        "contraction_detail": { "type": ["string", "null"] },
-        "arr_change_reason": { "type": ["string", "null"], "enum": ["contract_ramp", "expansion", "contraction", "price_change", "fx", null] },
-        "renewal_opportunity": {
-          "type": ["object", "null"],
-          "additionalProperties": false,
-          "properties": {
-            "opportunity_id": { "type": "string" },
-            "stage": { "type": "string" },
-            "amount": { "type": "number" },
-            "close_date": { "type": "string", "format": "date" },
-            "cse_scenario": { "type": ["string", "null"] }
+        "arr": {
+          "type": "number",
+          "minimum": 0
+        },
+        "arr_90d_ago": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "default": "USD"
+        },
+        "term_start": {
+          "type": "string",
+          "format": "date"
+        },
+        "term_end": {
+          "type": "string",
+          "format": "date"
+        },
+        "term_months": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "days_to_renewal": {
+          "type": "integer"
+        },
+        "auto_renew": {
+          "type": "boolean"
+        },
+        "seats_purchased": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tier": {
+          "type": "string"
+        },
+        "modules_owned": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
-        "commit_units": { "type": ["number", "null"] },
-        "consumed_units_run_rate_monthly": { "type": ["number", "null"] }
+        "payment_days_past_due": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contraction_flag_90d": {
+          "type": "boolean"
+        },
+        "contraction_detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "arr_change_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "contract_ramp",
+            "expansion",
+            "contraction",
+            "price_change",
+            "fx",
+            null
+          ]
+        },
+        "renewal_opportunity": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "opportunity_id": {
+              "type": "string"
+            },
+            "stage": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "close_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "cse_scenario": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "commit_units": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "consumed_units_run_rate_monthly": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
       }
     },
     "health": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["score", "band", "score_30d_ago", "score_90d_ago", "components", "overrides_applied"],
+      "required": [
+        "score",
+        "band",
+        "score_30d_ago",
+        "score_90d_ago",
+        "components",
+        "overrides_applied"
+      ],
       "properties": {
-        "score": { "type": "number", "minimum": 0, "maximum": 100 },
-        "band": { "type": "string", "enum": ["green", "yellow", "red"] },
-        "score_30d_ago": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-        "score_90d_ago": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-        "band_30d_ago": { "type": ["string", "null"], "enum": ["green", "yellow", "red", null] },
-        "trend_adjustment": { "type": "number" },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "band": {
+          "type": "string",
+          "enum": [
+            "green",
+            "yellow",
+            "red"
+          ]
+        },
+        "score_30d_ago": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "score_90d_ago": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "band_30d_ago": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "green",
+            "yellow",
+            "red",
+            null
+          ]
+        },
+        "trend_adjustment": {
+          "type": "number"
+        },
         "components": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "normalized", "weight", "contribution"],
+            "required": [
+              "name",
+              "normalized",
+              "weight",
+              "contribution"
+            ],
             "properties": {
-              "name": { "type": "string", "enum": ["adoption", "engagement", "support", "sentiment", "relationship", "commercial"] },
-              "normalized": { "type": "number", "minimum": 0, "maximum": 100 },
-              "weight": { "type": "number", "minimum": 0, "maximum": 1 },
-              "contribution": { "type": "number" },
-              "contribution_30d_ago": { "type": ["number", "null"] },
-              "raw_inputs": { "type": "object" },
-              "explanation": { "type": "string" }
+              "name": {
+                "type": "string",
+                "enum": [
+                  "adoption",
+                  "engagement",
+                  "support",
+                  "sentiment",
+                  "relationship",
+                  "commercial"
+                ]
+              },
+              "normalized": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "contribution": {
+                "type": "number"
+              },
+              "contribution_30d_ago": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "raw_inputs": {
+                "type": "object"
+              },
+              "explanation": {
+                "type": "string"
+              }
             }
           }
         },
@@ -132,58 +444,187 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["rule", "cap"],
+            "required": [
+              "rule",
+              "cap"
+            ],
             "properties": {
-              "rule": { "type": "string" },
-              "cap": { "type": "number" }
+              "rule": {
+                "type": "string"
+              },
+              "cap": {
+                "type": "number"
+              }
             }
           }
         },
-        "mart_score": { "type": ["number", "null"], "description": "Score as computed by mart_customer_health_daily, for drift checking." }
+        "mart_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Score as computed by mart_customer_health_daily, for drift checking."
+        },
+        "raw_weighted_sum": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Uncapped weighted sum before trend adjustment and overrides; persisted for trend computation."
+        },
+        "raw_weighted_sum_30d_ago": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "drift_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "usage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["dau_mau_30d", "mau_30d", "active_users_30d", "feature_depth_30d", "feature_breadth_30d", "seat_utilization", "utilization_drift_90d", "days_since_last_login", "core_features_used", "core_features_unused"],
+      "required": [
+        "dau_mau_30d",
+        "mau_30d",
+        "active_users_30d",
+        "feature_depth_30d",
+        "feature_breadth_30d",
+        "seat_utilization",
+        "utilization_drift_90d",
+        "days_since_last_login",
+        "core_features_used",
+        "core_features_unused"
+      ],
       "properties": {
-        "dau_mau_30d": { "type": "number", "minimum": 0, "maximum": 1 },
-        "wau_mau_30d": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "mau_30d": { "type": "integer", "minimum": 0 },
-        "active_users_30d": { "type": "integer", "minimum": 0 },
-        "feature_depth_30d": { "type": "number", "minimum": 0, "maximum": 1 },
-        "feature_breadth_30d": { "type": "number", "minimum": 0, "maximum": 1 },
-        "power_user_ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "seat_utilization": { "type": "number", "minimum": 0 },
-        "seat_utilization_90d_ago": { "type": ["number", "null"], "minimum": 0 },
-        "utilization_drift_90d": { "type": "number" },
-        "days_since_last_login": { "type": "integer", "minimum": 0 },
-        "core_features_used": { "type": "array", "items": { "type": "string" } },
-        "core_features_unused": { "type": "array", "items": { "type": "string" } },
+        "dau_mau_30d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "wau_mau_30d": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mau_30d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_users_30d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "feature_depth_30d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "feature_breadth_30d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "power_user_ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "seat_utilization": {
+          "type": "number",
+          "minimum": 0
+        },
+        "seat_utilization_90d_ago": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "utilization_drift_90d": {
+          "type": "number"
+        },
+        "days_since_last_login": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "core_features_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "core_features_unused": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "fading_features": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["feature_key", "last_used_days_ago"],
+            "required": [
+              "feature_key",
+              "last_used_days_ago"
+            ],
             "properties": {
-              "feature_key": { "type": "string" },
-              "last_used_days_ago": { "type": "integer" },
-              "last_user_email_hash": { "type": ["string", "null"] }
+              "feature_key": {
+                "type": "string"
+              },
+              "last_used_days_ago": {
+                "type": "integer"
+              },
+              "last_user_email_hash": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           }
         },
-        "integrations_connected": { "type": "array", "items": { "type": "string" } },
+        "integrations_connected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "feature_gate_hits_14d": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["feature_key", "hits"],
+            "required": [
+              "feature_key",
+              "hits"
+            ],
             "properties": {
-              "feature_key": { "type": "string" },
-              "hits": { "type": "integer", "minimum": 0 },
-              "gated_to_tier": { "type": ["string", "null"] }
+              "feature_key": {
+                "type": "string"
+              },
+              "hits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "gated_to_tier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           }
         },
@@ -192,74 +633,239 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["business_unit", "active_users_30d"],
+            "required": [
+              "business_unit",
+              "active_users_30d"
+            ],
             "properties": {
-              "business_unit": { "type": "string" },
-              "active_users_30d": { "type": "integer" },
-              "seats_allocated": { "type": ["integer", "null"] },
-              "engaged_contacts": { "type": ["integer", "null"] }
+              "business_unit": {
+                "type": "string"
+              },
+              "active_users_30d": {
+                "type": "integer"
+              },
+              "seats_allocated": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "engaged_contacts": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
             }
           }
         },
-        "pql_score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
+        "pql_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
       }
     },
     "support": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["open_tickets", "tickets_30d", "tickets_per_100_seats_30d", "avg_csat_90d", "median_first_response_hours_90d"],
+      "required": [
+        "open_tickets",
+        "tickets_30d",
+        "tickets_per_100_seats_30d",
+        "avg_csat_90d",
+        "median_first_response_hours_90d"
+      ],
       "properties": {
         "open_tickets": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["ticket_id", "priority", "age_days", "subject"],
+            "required": [
+              "ticket_id",
+              "priority",
+              "age_days",
+              "subject"
+            ],
             "properties": {
-              "ticket_id": { "type": "string" },
-              "priority": { "type": "string", "enum": ["P1", "P2", "P3", "P4"] },
-              "status": { "type": "string" },
-              "age_days": { "type": "integer", "minimum": 0 },
-              "subject": { "type": "string" },
-              "reopened_count": { "type": "integer", "minimum": 0 },
-              "tags": { "type": "array", "items": { "type": "string" } }
+              "ticket_id": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "P1",
+                  "P2",
+                  "P3",
+                  "P4"
+                ]
+              },
+              "status": {
+                "type": "string"
+              },
+              "age_days": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "subject": {
+                "type": "string"
+              },
+              "reopened_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
-        "tickets_30d": { "type": "integer", "minimum": 0 },
-        "tickets_per_100_seats_30d": { "type": "number", "minimum": 0 },
-        "p1_p2_opened_90d": { "type": "integer", "minimum": 0 },
-        "avg_csat_90d": { "type": ["number", "null"], "minimum": 1, "maximum": 5 },
-        "csat_responses_90d": { "type": "integer", "minimum": 0 },
-        "median_first_response_hours_90d": { "type": ["number", "null"], "minimum": 0 },
-        "incidents_affecting_account_90d": { "type": "integer", "minimum": 0 }
+        "tickets_30d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tickets_per_100_seats_30d": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p1_p2_opened_90d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "avg_csat_90d": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "csat_responses_90d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "median_first_response_hours_90d": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "incidents_affecting_account_90d": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "sentiment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ecri", "nps_responses", "transcript_signals", "verbatim_signals"],
+      "required": [
+        "ecri",
+        "nps_responses",
+        "transcript_signals",
+        "verbatim_signals"
+      ],
       "properties": {
-        "latest_nps": { "type": ["integer", "null"], "minimum": -100, "maximum": 100 },
-        "latest_nps_at": { "type": ["string", "null"], "format": "date" },
-        "nps_trend": { "type": ["string", "null"], "enum": ["improving", "stable", "worsening", null] },
-        "latest_csat": { "type": ["number", "null"], "minimum": 1, "maximum": 5 },
-        "transcript_sentiment_30d": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
-        "ecri": { "type": "number", "minimum": 0, "maximum": 100, "description": "Executive Champion Risk Index" },
-        "ecri_components": { "type": "object" },
-        "theme_counts_90d": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "latest_nps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": -100,
+          "maximum": 100
+        },
+        "latest_nps_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "nps_trend": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "improving",
+            "stable",
+            "worsening",
+            null
+          ]
+        },
+        "latest_csat": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "transcript_sentiment_30d": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -1,
+          "maximum": 1
+        },
+        "ecri": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Executive Champion Risk Index"
+        },
+        "ecri_components": {
+          "type": "object"
+        },
+        "theme_counts_90d": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
         "nps_responses": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["response_id", "contact_id", "score", "responded_at"],
+            "required": [
+              "response_id",
+              "contact_id",
+              "score",
+              "responded_at"
+            ],
             "properties": {
-              "response_id": { "type": "string" },
-              "contact_id": { "type": "string" },
-              "score": { "type": "integer", "minimum": 0, "maximum": 10 },
-              "responded_at": { "type": "string", "format": "date" },
-              "verbatim": { "type": ["string", "null"], "description": "Customer-authored. Wrapped in <untrusted_customer_text> when rendered." }
+              "response_id": {
+                "type": "string"
+              },
+              "contact_id": {
+                "type": "string"
+              },
+              "score": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "responded_at": {
+                "type": "string",
+                "format": "date"
+              },
+              "verbatim": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Customer-authored. Wrapped in <untrusted_customer_text> when rendered."
+              }
             }
           }
         },
@@ -268,78 +874,263 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["call_id", "occurred_at", "sentiment", "themes"],
+            "required": [
+              "call_id",
+              "occurred_at",
+              "sentiment",
+              "themes"
+            ],
             "properties": {
-              "call_id": { "type": "string" },
-              "occurred_at": { "type": "string", "format": "date" },
-              "sentiment": { "type": "number", "minimum": -1, "maximum": 1 },
-              "urgency": { "type": "string", "enum": ["none", "low", "medium", "high", "critical"] },
+              "call_id": {
+                "type": "string"
+              },
+              "occurred_at": {
+                "type": "string",
+                "format": "date"
+              },
+              "sentiment": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              },
+              "urgency": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ]
+              },
               "themes": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["theme", "polarity", "quoted_evidence"],
+                  "required": [
+                    "theme",
+                    "polarity",
+                    "quoted_evidence"
+                  ],
                   "properties": {
-                    "theme": { "type": "string" },
-                    "polarity": { "type": "integer", "enum": [-1, 0, 1] },
-                    "quoted_evidence": { "type": "string" },
-                    "paraphrase": { "type": "string" },
-                    "urgency": { "type": "string" },
-                    "feature_or_entity": { "type": ["string", "null"] }
+                    "theme": {
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "type": "integer",
+                      "enum": [
+                        -1,
+                        0,
+                        1
+                      ]
+                    },
+                    "quoted_evidence": {
+                      "type": "string"
+                    },
+                    "paraphrase": {
+                      "type": "string"
+                    },
+                    "urgency": {
+                      "type": "string"
+                    },
+                    "feature_or_entity": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
                   }
                 }
               },
-              "entities": { "type": "array", "items": { "type": "object" } },
-              "champion_change_detected": { "type": "boolean" },
-              "summary": { "type": "string" }
+              "entities": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "champion_change_detected": {
+                "type": "boolean"
+              },
+              "summary": {
+                "type": "string"
+              }
             }
           }
         },
         "verbatim_signals": {
           "type": "array",
-          "items": { "type": "object" }
+          "items": {
+            "type": "object"
+          }
         }
       }
     },
     "relationship": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stakeholders", "champion", "multithreading_depth", "days_since_last_csm_touch", "exec_sponsor_engaged_180d"],
+      "required": [
+        "stakeholders",
+        "champion",
+        "multithreading_depth",
+        "days_since_last_csm_touch",
+        "exec_sponsor_engaged_180d"
+      ],
       "properties": {
         "stakeholders": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contact_id", "name", "persona", "seniority", "is_champion", "is_exec_sponsor"],
+            "required": [
+              "contact_id",
+              "name",
+              "persona",
+              "seniority",
+              "is_champion",
+              "is_exec_sponsor"
+            ],
             "properties": {
-              "contact_id": { "type": "string" },
-              "name": { "type": "string" },
-              "title": { "type": ["string", "null"] },
-              "email_hash": { "type": ["string", "null"], "description": "SHA-256 of normalized email; raw emails never enter the document." },
-              "persona": { "type": "string", "enum": ["economic_buyer", "champion", "executive_sponsor", "admin", "end_user", "procurement", "it_security", "developer", "ops_manager", "unknown"] },
-              "seniority": { "type": "string", "enum": ["c_level", "vp", "director", "manager", "individual_contributor", "unknown"] },
-              "function": { "type": ["string", "null"] },
-              "business_unit": { "type": ["string", "null"] },
-              "is_champion": { "type": "boolean" },
-              "is_exec_sponsor": { "type": "boolean" },
-              "last_engaged_at": { "type": ["string", "null"], "format": "date" },
-              "last_engagement_direction": { "type": ["string", "null"], "enum": ["inbound", "outbound", "two_way", null] },
-              "engagements_90d": { "type": "integer", "minimum": 0 },
-              "tenure_months_at_account": { "type": ["integer", "null"] },
-              "left_company_at": { "type": ["string", "null"], "format": "date" },
+              "contact_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email_hash": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "SHA-256 of normalized email; raw emails never enter the document."
+              },
+              "persona": {
+                "type": "string",
+                "enum": [
+                  "economic_buyer",
+                  "champion",
+                  "executive_sponsor",
+                  "admin",
+                  "end_user",
+                  "procurement",
+                  "it_security",
+                  "developer",
+                  "ops_manager",
+                  "unknown"
+                ]
+              },
+              "seniority": {
+                "type": "string",
+                "enum": [
+                  "c_level",
+                  "vp",
+                  "director",
+                  "manager",
+                  "individual_contributor",
+                  "unknown"
+                ]
+              },
+              "function": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "business_unit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "is_champion": {
+                "type": "boolean"
+              },
+              "is_exec_sponsor": {
+                "type": "boolean"
+              },
+              "last_engaged_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "last_engagement_direction": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "inbound",
+                  "outbound",
+                  "two_way",
+                  null
+                ]
+              },
+              "engagements_90d": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tenure_months_at_account": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "left_company_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
               "enrichment": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "provider": { "type": "string" },
-                  "enriched_at": { "type": "string", "format": "date" },
-                  "current_employer": { "type": ["string", "null"] },
-                  "current_title": { "type": ["string", "null"] },
-                  "employer_matches_account": { "type": ["boolean", "null"] },
-                  "title_changed": { "type": ["boolean", "null"] },
-                  "enrichment_stale": { "type": "boolean" }
+                  "provider": {
+                    "type": "string"
+                  },
+                  "enriched_at": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "current_employer": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "current_title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "employer_matches_account": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "title_changed": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "enrichment_stale": {
+                    "type": "boolean"
+                  }
                 }
               }
             }
@@ -348,19 +1139,61 @@
         "champion": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["status", "replacement_identified"],
+          "required": [
+            "status",
+            "replacement_identified"
+          ],
           "properties": {
-            "contact_id": { "type": ["string", "null"] },
-            "status": { "type": "string", "enum": ["active", "at_risk", "departed", "none"] },
-            "last_engaged_at": { "type": ["string", "null"], "format": "date" },
-            "replacement_identified": { "type": "boolean" },
-            "replacement_contact_id": { "type": ["string", "null"] }
+            "contact_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "at_risk",
+                "departed",
+                "none"
+              ]
+            },
+            "last_engaged_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            },
+            "replacement_identified": {
+              "type": "boolean"
+            },
+            "replacement_contact_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         },
-        "multithreading_depth": { "type": "integer", "minimum": 0 },
-        "functions_engaged_90d": { "type": "array", "items": { "type": "string" } },
-        "days_since_last_csm_touch": { "type": "integer", "minimum": 0 },
-        "exec_sponsor_engaged_180d": { "type": "boolean" }
+        "multithreading_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "functions_engaged_90d": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "days_since_last_csm_touch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exec_sponsor_engaged_180d": {
+          "type": "boolean"
+        }
       }
     },
     "opportunities": {
@@ -368,78 +1201,256 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["opportunity_id", "type", "stage", "amount", "is_closed"],
+        "required": [
+          "opportunity_id",
+          "type",
+          "stage",
+          "amount",
+          "is_closed"
+        ],
         "properties": {
-          "opportunity_id": { "type": "string" },
-          "type": { "type": "string", "enum": ["new", "renewal", "expansion", "upsell", "cross_sell"] },
-          "stage": { "type": "string" },
-          "amount": { "type": "number" },
-          "created_at": { "type": "string", "format": "date" },
-          "close_date": { "type": ["string", "null"], "format": "date" },
-          "is_closed": { "type": "boolean" },
-          "is_won": { "type": ["boolean", "null"] }
+          "opportunity_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "new",
+              "renewal",
+              "expansion",
+              "upsell",
+              "cross_sell"
+            ]
+          },
+          "stage": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date"
+          },
+          "close_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "is_closed": {
+            "type": "boolean"
+          },
+          "is_won": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
         }
       }
     },
     "whitespace": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["unowned_modules", "unowned_business_units", "unowned_regions"],
+      "required": [
+        "unowned_modules",
+        "unowned_business_units",
+        "unowned_regions"
+      ],
       "properties": {
-        "unowned_modules": { "type": "array", "items": { "type": "string" } },
-        "unowned_business_units": { "type": "array", "items": { "type": "string" } },
-        "unowned_regions": { "type": "array", "items": { "type": "string" } },
-        "next_tier": { "type": ["string", "null"] },
-        "indicative_sizing": { "type": "object", "additionalProperties": { "type": "number" } }
+        "unowned_modules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unowned_business_units": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unowned_regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next_tier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "indicative_sizing": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
       }
     },
     "cadence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ebr_cadence", "ebrs_completed_last_2_quarters"],
+      "required": [
+        "ebr_cadence",
+        "ebrs_completed_last_2_quarters"
+      ],
       "properties": {
-        "ebr_cadence": { "type": "string", "enum": ["quarterly", "semi_annual", "annual", "none"] },
-        "last_ebr_at": { "type": ["string", "null"], "format": "date" },
-        "next_ebr_due_at": { "type": ["string", "null"], "format": "date" },
-        "last_ebr_prepared_at": { "type": ["string", "null"], "format": "date" },
-        "ebrs_completed_last_2_quarters": { "type": "integer", "minimum": 0 },
-        "next_ebr_attendees": { "type": "array", "items": { "type": "string" }, "description": "contact_ids" }
+        "ebr_cadence": {
+          "type": "string",
+          "enum": [
+            "quarterly",
+            "semi_annual",
+            "annual",
+            "none"
+          ]
+        },
+        "last_ebr_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "next_ebr_due_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "last_ebr_prepared_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "ebrs_completed_last_2_quarters": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_ebr_attendees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "contact_ids"
+        }
       }
     },
     "lifecycle": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stage", "days_since_term_start", "value_milestones_reached"],
+      "required": [
+        "stage",
+        "days_since_term_start",
+        "value_milestones_reached"
+      ],
       "properties": {
-        "stage": { "type": "string", "enum": ["onboarding", "adopting", "established", "renewal_window", "churned"] },
-        "days_since_term_start": { "type": "integer", "minimum": 0 },
-        "kickoff_at": { "type": ["string", "null"], "format": "date" },
-        "kickoff_notes": { "type": ["string", "null"] },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "onboarding",
+            "adopting",
+            "established",
+            "renewal_window",
+            "churned"
+          ]
+        },
+        "days_since_term_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kickoff_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "kickoff_notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "value_milestones_reached": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["milestone_key", "reached_at"],
+            "required": [
+              "milestone_key",
+              "reached_at"
+            ],
             "properties": {
-              "milestone_key": { "type": "string" },
-              "reached_at": { "type": "string", "format": "date" }
+              "milestone_key": {
+                "type": "string"
+              },
+              "reached_at": {
+                "type": "string",
+                "format": "date"
+              }
             }
           }
         },
-        "ttv_days": { "type": ["integer", "null"] },
+        "ttv_days": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "onboarding_steps": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["step", "status"],
+            "required": [
+              "step",
+              "status"
+            ],
             "properties": {
-              "step": { "type": "string" },
-              "status": { "type": "string", "enum": ["not_started", "in_progress", "blocked", "done"] },
-              "owner_side": { "type": ["string", "null"], "enum": ["customer", "vendor", null] },
-              "updated_at": { "type": ["string", "null"], "format": "date" },
-              "note": { "type": ["string", "null"] }
+              "step": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "not_started",
+                  "in_progress",
+                  "blocked",
+                  "done"
+                ]
+              },
+              "owner_side": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "customer",
+                  "vendor",
+                  null
+                ]
+              },
+              "updated_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           }
         }
@@ -451,14 +1462,39 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["call_id", "occurred_at"],
+        "required": [
+          "call_id",
+          "occurred_at"
+        ],
         "properties": {
-          "call_id": { "type": "string" },
-          "occurred_at": { "type": "string", "format": "date" },
-          "duration_sec": { "type": ["integer", "null"] },
-          "transcript_uri": { "type": ["string", "null"] },
-          "participants": { "type": "array", "items": { "type": "string" } },
-          "parsed": { "type": "boolean" }
+          "call_id": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration_sec": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "transcript_uri": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parsed": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -467,20 +1503,67 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["action_id", "playbook_id", "status", "emitted_at"],
+        "required": [
+          "action_id",
+          "playbook_id",
+          "status",
+          "emitted_at"
+        ],
         "properties": {
-          "action_id": { "type": "string" },
-          "playbook_id": { "type": "string" },
-          "status": { "type": "string", "enum": ["open", "approved", "executed", "rejected", "superseded", "closed"] },
-          "emitted_at": { "type": "string", "format": "date" },
-          "title": { "type": ["string", "null"] }
+          "action_id": {
+            "type": "string"
+          },
+          "playbook_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "approved",
+              "executed",
+              "rejected",
+              "superseded",
+              "closed"
+            ]
+          },
+          "emitted_at": {
+            "type": "string",
+            "format": "date"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     },
     "benchmarks": {
       "type": "object",
       "description": "Segment medians injected for this account's segment.",
-      "additionalProperties": { "type": ["number", "string", "null"] }
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "null"
+        ]
+      }
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Flags set during assembly (plugin mode) — what was missing and why."
+    },
+    "_view_note": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Set only on per-prompt views; lists what was trimmed."
     }
   }
 }

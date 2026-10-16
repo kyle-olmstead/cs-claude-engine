@@ -61,6 +61,20 @@ dbt run --select mart_customer_health_daily mart_retention_nrr_grr
 
 # 3. Orchestrate the whole book
 python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out
+
+# 4. Nightly: the same run through the Messages Batches API (half price, no rate-limit tuning)
+python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out --batch
+
+# 5. Your own catalogs (feature catalog with your retention lifts, price book, value milestones, ROI inputs by account id,
+#    retention context by segment, benchmarks by segment) — a single JSON file overriding the defaults in src/catalogs.py
+python -m src.orchestrator --input ./feeds/ --out ./out --catalogs config/catalogs.json
+```
+
+### Verify
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q          # schemas, golden health score, triggers, prompt rendering, validation + policy floors, mocked live path, CLI runs
 ```
 
 Outputs land in `./out/<account_id>/<playbook_id>.<prompt>.action.json` plus any drafted communications as `.md`, and a run-level `run_summary.json` listing every alert by priority.
@@ -79,9 +93,26 @@ Outputs land in `./out/<account_id>/<playbook_id>.<prompt>.action.json` plus any
 
 ---
 
+## Module map
+
+| Module | Responsibility |
+|---|---|
+| `src/orchestrator.py` | Wiring and CLI: feed → prepare → triggers → views → client → router; `--offline`, `--triggers-only`, `--batch` |
+| `src/prompts.py` | Prompt registry; YAML headers with declared `inputs:`; rendering |
+| `src/claude_client.py` | Cached system + body blocks, per-prompt schema slicing, truncation-safe retries, Batches API |
+| `src/validation.py` | Schema, evidence paths **and values**, recipient safety, policy floors, cooldowns |
+| `src/views.py` | Per-prompt Customer 360 views (drop unused blocks, cap long lists by relevance) |
+| `src/triggers.py` | The playbook registry: triggers, precedence, cooldowns; generates the registry table for the system prompt |
+| `src/router.py` | Policy floors → files → approval queue / adapters (live mode) |
+| `src/catalogs.py` | Default benchmarks, feature catalog, price book, value milestones, ROI inputs |
+| `src/testing.py` | `OfflineEmitter` — deterministic stand-in for Claude |
+| `src/validate.py` | CLI the plugin skills call |
+| `src/models/` | `health_score.py`, `metrics_calculator.py` |
+| `src/tools/` | Clay enrichment + CRM adapters; transcript parser |
+
 ## How Claude is used
 
-**One contract, every call.** Every prompt in `prompts/` ends with an `<output_format>` block that points at `src/schemas/playbook_action.json` (or, for the sentiment analyzer, its own embedded schema). The orchestrator calls the Messages API with `tools=[{"name": "emit_playbook_action", "input_schema": <that schema>}]` and `tool_choice={"type": "tool", "name": "emit_playbook_action"}`. Claude cannot return prose; it must return a conforming object. The orchestrator validates with `jsonschema`, resolves every cited evidence path against the input document, and rejects anything that fails — once with the errors fed back for a retry, then to manual review.
+**One contract, every call.** Every prompt in `prompts/` ends with an `<output_format>` block that points at `src/schemas/playbook_action.json` (or, for the sentiment analyzer, its own embedded schema). The orchestrator calls the Messages API with `tools=[{"name": "emit_playbook_action", "input_schema": <that schema>}]` and `tool_choice={"type": "tool", "name": "emit_playbook_action"}`. Claude cannot return prose; it must return a conforming object. The client validates with `jsonschema`, resolves every cited evidence path against the input document **and checks the claimed value matches**, verifies communication recipients are current stakeholders, and rejects anything that fails — once with the errors fed back for a retry, then to `out/<account>/_invalid/` for manual review. A truncated response (`stop_reason: max_tokens`) is never accepted as a partial object.
 
 **Prompt files are versioned artifacts.** Each `.prompt` file has a YAML header (`id`, `version`, `model`, `temperature`, `max_tokens`, `variables`, `output_schema`, `description`) followed by the system prompt body, written with explicit XML sections:
 

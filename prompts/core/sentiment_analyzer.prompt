@@ -1,12 +1,16 @@
 ---
 id: core.sentiment_analyzer
-version: 2.2.0
+version: 2.3.0
 model: claude-haiku-5-5
 temperature: 0.0
 max_tokens: 2048
+inputs:
+  account_name: c360:account.name
+  segment: c360:account.segment
+  source_type: run:source_type
+  today: run:today
+cache: [system, body]
 output_schema: embedded
-variables: [account_name, segment, source_type, today]
-cache: [system]
 description: Extracts structured sentiment, themes, urgency, and quoted evidence from customer-authored text — NPS/CSAT verbatims, support ticket bodies, or call-transcript segments. Runs at high volume on the fastest model; output is merged into Customer 360 `sentiment.transcript_signals[]` / `sentiment.verbatim_signals[]`. Emits via the `emit_sentiment_analysis` tool whose input_schema is the embedded schema below.
 ---
 
@@ -118,6 +122,7 @@ Call `emit_sentiment_analysis` exactly once. The tool's input_schema (JSON Schem
     "summary": { "type": "string", "maxLength": 400, "description": "One to two sentences a CSM can read in five seconds." }
   }
 }
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

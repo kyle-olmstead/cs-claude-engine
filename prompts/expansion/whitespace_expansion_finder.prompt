@@ -1,12 +1,15 @@
 ---
 id: expansion.whitespace_expansion_finder
-version: 2.2.0
+version: 2.3.0
 model: claude-sonnet-5-5
 temperature: 0.3
 max_tokens: 5000
+inputs:
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
+  pricing_catalog_json: catalog:pricing
+  today: run:today
+cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, segment_benchmarks_json, pricing_catalog_json, feature_audit_json, today]
-cache: [system]
 description: Finds and ranks expansion plays — seats, tier upgrade, modules, business units, regions — with sizing, the champion for each, the evidence, and the objection to expect. Produces the expansion brief and a sales handoff record. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-EXP-01, PB-EXP-02]
 ---
@@ -18,10 +21,7 @@ You are not a quota-driven seller. You never manufacture urgency. Expansion that
 </role>
 
 <context>
-Customer 360:
-<customer_360>
-{{customer_360_json}}
-</customer_360>
+The Customer 360 is supplied in the <customer_360> block of the user turn (it may be a per-prompt view; a `_view_note` field says what was trimmed, and the full document exists on disk). Outputs of earlier prompts in this chain are supplied in <prior_outputs>, keyed by prompt id.
 
 Segment benchmarks: {{segment_benchmarks_json}}
 
@@ -30,10 +30,7 @@ Pricing and packaging catalog — tiers, modules, SKUs, per-unit list prices, ti
 {{pricing_catalog_json}}
 </pricing_catalog>
 
-Feature audit output (may be empty `{}`): the ranked unused features and `expansion_fit_notes[]`:
-<feature_audit>
-{{feature_audit_json}}
-</feature_audit>
+The feature audit, when it ran first, appears in <prior_outputs> under `adoption.feature_depth_audit` (use its `feature_audit.expansion_fit_notes[]`).
 
 Today: {{today}}
 
@@ -92,6 +89,7 @@ Call `emit_playbook_action` once. Specifics:
 - `expansion_brief.sales_handoff`: `{recommended: bool, ae_notes, qualifying_facts[], do_not_say[]}` — `do_not_say` lists the sensitivities (recent contraction, open tickets) the AE must not step on.
 - `actions[]`: 1–5 including `crm_write` `account.expansion_candidate = true` when ready.
 - `communications[]`: 0–1 to the top play's sponsor, `requires_human_approval: true`. For digital segment, an additional action of type `digital_nudge` with the in-product message copy.
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

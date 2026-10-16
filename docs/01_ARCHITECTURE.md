@@ -158,54 +158,62 @@ Concurrency: accounts are independent, so the orchestrator uses a `ThreadPoolExe
 
 ## 5. L3 — Intelligence
 
-### 5.1 Prompt registry
+### 5.1 Prompt registry (`src/prompts.py`)
 
-`prompts/**/*.prompt` files are loaded at startup by `PromptRegistry`. A file is a YAML header between `---` fences followed by the prompt body. The header declares:
+`prompts/**/*.prompt` files are loaded at startup. A file is a YAML header between `---` fences followed by the prompt body. The header declares the prompt's **inputs** — every `{{variable}}` the body uses, each with a source spec the orchestrator resolves generically:
 
 ```yaml
-id: retention.churn_risk_rca      # unique, dotted
-version: 2.3.0                    # semver; bump on any behavior change
-model: claude-sonnet-5-5          # overrides CLAUDE_MODEL env for this prompt
+id: adoption.feature_depth_audit
+version: 2.1.0
+model: claude-sonnet-5-5
 temperature: 0.2
 max_tokens: 4096
-output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, segment_benchmarks_json, today]
-cache: [system]                   # which blocks get cache_control
+inputs:
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks   # dotted path into the 360, else the default catalog
+  feature_catalog_json: catalog:feature_catalog                   # a catalog (overridable with --catalogs)
+  today: run:today                                                # a run-level value
+cache: [system, body]
 ```
 
-Variables are injected with `{{name}}` substitution. Missing variables raise at build time, not at API time.
+A body that uses an undeclared variable fails at load time, not at API time. Outputs of earlier prompts in a chain are **not** variables; they travel in the user turn (see §5.2) so the rendered body is identical across every account in a segment and is served from the prompt cache.
 
-### 5.2 Request construction
+### 5.2 Request construction (`src/claude_client.py`)
 
 ```python
 client.messages.create(
-    model=prompt.model,
-    max_tokens=prompt.max_tokens,
-    temperature=prompt.temperature,
+    model=prompt.model, max_tokens=prompt.max_tokens, temperature=prompt.temperature,
     system=[
-        {"type": "text", "text": orchestrator_system_prompt, "cache_control": {"type": "ephemeral"}},
-        {"type": "text", "text": playbook_registry_text,     "cache_control": {"type": "ephemeral"}},
-        {"type": "text", "text": prompt.body_rendered},
+        {"type": "text", "text": orchestrator_system_prompt, "cache_control": {"type": "ephemeral"}},  # includes the generated playbook registry table
+        {"type": "text", "text": prompt.body_rendered,       "cache_control": {"type": "ephemeral"}},  # static per segment → cached
     ],
-    messages=[{"role": "user", "content": f"<customer_360>{c360_json}</customer_360>\n<instruction>{instruction}</instruction>"}],
-    tools=[{"name": "emit_playbook_action", "description": "...", "input_schema": playbook_action_schema}],
+    messages=[{"role": "user", "content":
+        "<customer_360>…per-prompt view…</customer_360>\n<prior_outputs>…earlier prompt outputs, keyed by id…</prior_outputs>\n<instruction>…</instruction>"}],
+    tools=[{"name": "emit_playbook_action", "input_schema": schema_for(prompt_id)}],   # base schema minus the sub-objects this prompt doesn't own
     tool_choice={"type": "tool", "name": "emit_playbook_action"},
-    metadata={"user_id": f"cse:{csm_id}"},
 )
 ```
 
-The two cached blocks are identical across every call in a run, so after the first call they are served from cache. The per-prompt body is small. The Customer 360 is the only large, uncached component.
+Three things keep the per-call cost low:
 
-### 5.3 Structured output guarantee
+* **Both system blocks are cached.** After the first call for a segment, only the Customer 360 view and the instruction are billed as fresh input.
+* **The tool schema is sliced per prompt** (`OWNED_SUBOBJECTS`): the RCA prompt doesn't carry the EBR's ten-slide schema. Typically 45–60% smaller, with measurably fewer constrained-decoding retries.
+* **The Customer 360 is sent as a per-prompt view** (`src/views.py`): blocks the prompt never reads are dropped and long lists are capped by relevance, with a `_view_note` saying what was trimmed. Evidence is verified against the view the model saw, so indices stay consistent.
 
-`tool_choice` forces a tool call; the SDK returns a `tool_use` content block whose `input` is a dict. The orchestrator:
+For nightly runs, `--batch` submits every first-stage prompt through the Messages Batches API (half price, no rate-limit tuning) and runs chained second stages synchronously with the first stage's output as `<prior_outputs>`.
 
-1. Validates against the JSON Schema (`jsonschema.Draft202012Validator`).
-2. Verifies every `evidence[].source_path` resolves inside the input document (JSON-pointer walk). Three or more unresolvable paths fail the action with `EvidenceIntegrityError`.
-3. Verifies every `crm_writes[].object` / `.field` pair is in the adapter's allowlist.
-4. Attaches provenance: `prompt_id`, `prompt_version`, `model`, `input_sha256`, `request_id`, token usage.
+### 5.3 Structured output guarantee (`src/validation.py`)
 
-Failures are retried once with the validation error appended to the user turn ("Your previous output failed validation: … Fix and re-emit."). A second failure is logged and surfaced to the CSM as a manual-review item.
+`tool_choice` forces a tool call; the SDK returns a `tool_use` block whose `input` is a dict. The client then:
+
+1. Checks `stop_reason`. A `max_tokens` stop never yields a partial object: the request is retried once with 1.5× headroom and a tightening instruction (prompts carry a "length discipline" block for exactly this).
+2. Validates against the sliced JSON Schema (`jsonschema.Draft202012Validator`).
+3. Verifies every `evidence[].source_path` resolves inside the view **and that the claimed `value` matches the document's value** (numeric within 1%, strings case-insensitive). A real path with a wrong number is the most plausible hallucination channel; this closes it. More than two unresolvable paths fails the action.
+4. Verifies every `communications[].recipient_contact_id` (and cc) is a current stakeholder — present in `relationship.stakeholders[]` and not departed.
+5. Feeds failures back once as a `tool_result` with `is_error: true` and the error list; on a second failure the attempts are written to `out/<account_id>/_invalid/` for manual review, as the playbook index promises.
+6. Applies the policy floors in code (`enforce_policy`): every communication and every forecast/commercial CRM write → `requires_human_approval: true`; `confidence < 0.55` → priority P3. Each change is recorded in `data_quality_flags` with a `policy:` prefix; free-text fields are never mutated.
+7. Attaches provenance: `prompt_id`, `prompt_version`, `model`, `input_sha256`, `request_id`, token usage, `stop_reason`, policy changes.
+
+Cooldowns are enforced before any call: a playbook that fired inside its window and is still open (`actions_last_30d[]`) gets a `signal_update` on the open action rather than a new one (`src/triggers.py`).
 
 ### 5.4 Prompt evaluation harness
 

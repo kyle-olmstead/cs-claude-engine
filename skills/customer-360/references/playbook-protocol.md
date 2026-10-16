@@ -35,7 +35,7 @@ Validate:
 python3 ${CLAUDE_PLUGIN_ROOT}/src/validate.py action cs-engine/accounts/<account_id>/<file>.action.json --c360 cs-engine/accounts/<account_id>/customer_360.json
 ```
 
-The validator checks the schema, resolves every `evidence[].source_path` against the document (more than two unresolvable paths is a failure), and applies the approval floors (every communication and every forecast/commercial write is forced to `requires_human_approval: true`). Fix what it reports and re-validate. Without Python, check the three things by hand and say so.
+The validator checks the schema; resolves every `evidence[].source_path` against the document **and compares the claimed value to the document's value** (a real path with a wrong number is a hallucination and fails); checks every communication recipient is a current stakeholder (not departed); and applies the policy floors — every communication and every forecast/commercial write is forced to `requires_human_approval: true`, and confidence below 0.55 lowers the priority to P3 — recording each change in `data_quality_flags`. Fix what it reports and re-validate. Without Python, check these by hand and say explicitly that validation was manual.
 
 Write each communication as `cs-engine/accounts/<account_id>/<playbook_id>.comm_<n>.md` with YAML front-matter (`to`, `cc`, `channel`, `subject`, `tone`, `send_after_days`, `approval_status: pending`) and the body. Communications are drafts. They are never sent by the engine.
 

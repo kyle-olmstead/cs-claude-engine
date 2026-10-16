@@ -4,15 +4,13 @@ Validation CLI used by the plugin skills (and handy on its own).
     python3 src/validate.py c360 <customer_360.json>
     python3 src/validate.py action <file.action.json> --c360 <customer_360.json> [--no-fix]
 
-`c360`   — validates a Customer 360 document against src/schemas/customer_360.json.
-`action` — validates a PlaybookAction (bare, or wrapped as {"provenance":..., "action":...})
-           against src/schemas/playbook_action.json, resolves every evidence[].source_path
-           inside the Customer 360, and applies the code-enforced approval floors (every
-           communication and every forecast/commercial CRM write → requires_human_approval=true).
-           Floors are written back to the file unless --no-fix is given.
+`c360`   — validates a Customer 360 against src/schemas/customer_360.json.
+`action` — validates a PlaybookAction (bare, or wrapped as {"provenance":..., "action":...}):
+           schema → evidence paths AND values → recipients are current stakeholders → policy
+           floors (communications and commercial/forecast writes need approval; confidence
+           < 0.55 lowers priority to P3). Floors are written back unless --no-fix.
 
-Exit code 0 = valid, 1 = invalid, 2 = usage error. Output is a short human-readable report
-followed by a JSON summary line (so a skill can parse it).
+Exit 0 = valid, 1 = invalid, 2 = usage error. Human-readable report, then one JSON summary line.
 """
 
 from __future__ import annotations
@@ -26,13 +24,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.orchestrator import (  # noqa: E402
-    EvidenceIntegrityError,
-    check_evidence_integrity,
-    enforce_approval_floors,
-    load_schema,
-    validate,
-)
+from src.validation import check_evidence, check_recipients, enforce_policy, schema_errors, validate_c360  # noqa: E402
+
+SCHEMA_DIR = ROOT / "src" / "schemas"
 
 
 def _load(path: Path):
@@ -42,7 +36,7 @@ def _load(path: Path):
 
 def cmd_c360(path: Path) -> int:
     doc = _load(path)
-    errors = validate(doc, load_schema("customer_360.json"))
+    errors = validate_c360(doc, _load(SCHEMA_DIR / "customer_360.json"))
     acct = (doc.get("account") or {}).get("account_id", "?")
     if errors:
         print(f"INVALID Customer 360 for {acct}: {len(errors)} error(s)")
@@ -50,9 +44,8 @@ def cmd_c360(path: Path) -> int:
             print(f"  - {e}")
         print(json.dumps({"ok": False, "errors": len(errors)}))
         return 1
-    flags = doc.get("data_quality_flags") or []
     print(f"VALID Customer 360 for {acct} (schema {doc.get('schema_version')}, as_of {doc.get('as_of_date')})")
-    print(json.dumps({"ok": True, "errors": 0, "data_quality_flags": flags}))
+    print(json.dumps({"ok": True, "errors": 0, "data_quality_flags": doc.get("data_quality_flags") or []}))
     return 0
 
 
@@ -62,46 +55,33 @@ def cmd_action(path: Path, c360_path: Path, fix: bool) -> int:
     action = raw["action"] if wrapped else raw
     c360 = _load(c360_path)
 
-    errors = validate(action, load_schema("playbook_action.json"))
-    unresolved = []
-    evidence_error = None
+    errors = schema_errors(action, _load(SCHEMA_DIR / "playbook_action.json"))
+    unresolved, ev_errors, rc_errors = [], [], []
     if not errors:
-        try:
-            unresolved = check_evidence_integrity(action, c360)
-        except EvidenceIntegrityError as e:
-            evidence_error = str(e)
+        ev_errors, unresolved = check_evidence(action, c360)
+        rc_errors = check_recipients(action, c360)
+    changes = enforce_policy(action)
+    if changes and fix:
+        out = {"provenance": raw["provenance"], "action": action} if wrapped else action
+        path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    before = json.dumps(action, sort_keys=True)
-    floored = enforce_approval_floors(json.loads(json.dumps(action)))
-    changed = json.dumps(floored, sort_keys=True) != before
-    floor_notes = []
-    if changed:
-        for i, (a, b) in enumerate(zip(action.get("actions", []), floored.get("actions", []))):
-            if a.get("requires_human_approval") != b.get("requires_human_approval"):
-                floor_notes.append(f"actions[{i}] '{a.get('title')}' → requires_human_approval=true (floor)")
-        for i, (a, b) in enumerate(zip(action.get("communications", []), floored.get("communications", []))):
-            if a.get("requires_human_approval") != b.get("requires_human_approval"):
-                floor_notes.append(f"communications[{i}] → requires_human_approval=true (floor)")
-        if fix:
-            out = {"provenance": raw["provenance"], "action": floored} if wrapped else floored
-            path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    ok = not errors and evidence_error is None
+    ok = not errors and not ev_errors and not rc_errors
     pb = action.get("playbook_id", "?")
     print(f"{'VALID' if ok else 'INVALID'} PlaybookAction {pb} ({path.name})")
     for e in errors[:25]:
         print(f"  - schema: {e}")
-    if evidence_error:
-        print(f"  - evidence: {evidence_error}")
-    elif unresolved:
+    for e in ev_errors:
+        print(f"  - evidence: {e}")
+    for e in rc_errors:
+        print(f"  - recipient: {e}")
+    if unresolved and not ev_errors:
         print(f"  - evidence: {len(unresolved)} unresolved path(s) tolerated: {unresolved}")
-    for n in floor_notes:
-        print(f"  - {n}{' [written]' if fix else ' [not written: --no-fix]'}")
+    for c in changes:
+        print(f"  - policy: {c}{' [written]' if fix else ' [not written: --no-fix]'}")
     print(json.dumps({
-        "ok": ok, "playbook_id": pb, "schema_errors": len(errors),
-        "unresolved_evidence": unresolved, "evidence_error": evidence_error,
-        "approval_floors_applied": len(floor_notes), "written": bool(changed and fix),
-        "awaiting_approval": sum(1 for a in floored.get("actions", []) if a.get("requires_human_approval")) + len(floored.get("communications", [])),
+        "ok": ok, "playbook_id": pb, "schema_errors": len(errors), "evidence_errors": len(ev_errors), "recipient_errors": len(rc_errors),
+        "unresolved_evidence": unresolved, "policy_changes": changes, "written": bool(changes and fix),
+        "awaiting_approval": sum(1 for a in action.get("actions", []) if a.get("requires_human_approval")) + len(action.get("communications", [])),
     }))
     return 0 if ok else 1
 

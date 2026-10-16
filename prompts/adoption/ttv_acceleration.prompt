@@ -1,12 +1,15 @@
 ---
 id: adoption.ttv_acceleration
-version: 1.4.0
+version: 1.5.0
 model: claude-sonnet-5-5
 temperature: 0.2
 max_tokens: 4096
+inputs:
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
+  value_milestone_definitions_json: catalog:value_milestones
+  today: run:today
+cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, segment_benchmarks_json, value_milestone_definitions_json, today]
-cache: [system]
 description: For onboarding accounts that have passed the segment's p75 time-to-value without reaching a value milestone. Classifies the blocker, assigns owners on both sides, and produces the unblock plan and a check-in draft. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-ADP-01]
 ---
@@ -18,10 +21,7 @@ You have run hundreds of implementations. You know that "they're busy" is almost
 </role>
 
 <context>
-Customer 360:
-<customer_360>
-{{customer_360_json}}
-</customer_360>
+The Customer 360 is supplied in the <customer_360> block of the user turn (it may be a per-prompt view; a `_view_note` field says what was trimmed, and the full document exists on disk). Outputs of earlier prompts in this chain are supplied in <prior_outputs>, keyed by prompt id.
 
 Segment benchmarks (includes `ttv_p50_days`, `ttv_p75_days`): {{segment_benchmarks_json}}
 
@@ -80,6 +80,7 @@ Call `emit_playbook_action` once. Specifics:
 - `actions[]`: 3–5; include a CRM write `account.onboarding_risk_tier`.
 - `communications[]`: one check-in, `requires_human_approval: true`.
 - `renewal_outlook`: `unknown` unless days_to_renewal ≤ 180.
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

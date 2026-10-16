@@ -22,23 +22,30 @@ The engine's daily loop, run inside Claude. Produces the digest; runs playbooks 
 
 Read `cs-engine/stack-profile.md`. Resolve "my book" as accounts in `~~crm` owned by the operator's `crm_owner_id` (ask once if unknown). Accept a narrower scope when the user gives one ("enterprise only", "renewing this quarter", "the ten biggest"). Cap a single run at 40 accounts; for larger books, run by segment or ARR tier and say so — a digest that takes an hour is not a digest.
 
-## Step 2 — Lightweight 360 per account
+## Step 2 — Tier 0: score everything from the CRM alone (1–3 calls)
 
-For each account, build the Customer 360 following `skills/customer-360/references/field-sources.md`, but in **digest mode**: pull `account`, `contract`, `health` history, `usage` summary, `support` open tickets and CSAT, `relationship` champion and depth, `sentiment.latest_nps` and `ecri`, `cadence`, `lifecycle`, and `actions_last_30d`. Skip transcript analysis and full stakeholder enrichment unless an account was already flagged on the last run. Reuse any `customer_360.json` less than one day old.
-
-Score each with:
-
-```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/src/models/health_score.py cs-engine/accounts/<id>/customer_360.json --json
-```
-
-and evaluate triggers for the whole book in one call:
+List the book's accounts with their properties in as few calls as the CRM allows: ARR, renewal date, seats,
+owner, champion/decision-maker flags, last activity date, contraction flags, open renewal opportunity. Build a
+**provisional** Customer 360 for each with only `account`, `contract`, `relationship` (from CRM contacts),
+`opportunities`, `cadence`, `lifecycle`, and `actions_last_30d`; every other block gets its "unavailable"
+default and flag from `field-sources.md`. Score and evaluate triggers on these:
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py --input cs-engine/accounts/ --triggers-only --out cs-engine/runs/<today>
 ```
 
-(`--input` accepts a directory; it reads every `customer_360.json` beneath it.) Without Python, score and evaluate by hand using `docs/02_METRICS_TAXONOMY.md` §B1 and `docs/03_PLAYBOOKS_MASTER_INDEX.md` §H, and say so.
+(`--input` accepts a directory; it reads every `customer_360.json` beneath it.) This pass is seconds, not minutes.
+Reuse any `customer_360.json` less than one day old instead of rebuilding it.
+
+## Step 2b — Tier 1: deep pull only where it matters
+
+For accounts that fired any trigger at Tier 0, or are inside 120 days of renewal, or are in the top 10 by ARR,
+pull `usage`, `support`, and `sentiment` from their connectors (per `field-sources.md`) and re-score. Everything
+else stays at Tier 0 and is labeled **CRM-only score** in the digest. Never deep-pull more than 15 accounts in
+one run; say when the cap was hit and which accounts were left at Tier 0.
+
+Without Python, score and evaluate by hand using `docs/02_METRICS_TAXONOMY.md` §B1 and
+`docs/03_PLAYBOOKS_MASTER_INDEX.md` §H, and say so.
 
 ## Step 3 — Portfolio notes
 

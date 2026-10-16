@@ -481,6 +481,8 @@ def attach_to_customer_360(c360: Dict[str, Any], result: HealthScoreResult) -> D
         "trend_adjustment": round(result.trend_adjustment, 2),
         "components": [c.to_dict() for c in result.components],
         "overrides_applied": [o.to_dict() for o in result.overrides_applied],
+        # Persisted so the next run can use the uncapped prior sum for the trend (see docs/02 §B1).
+        "raw_weighted_sum": round(result.raw_weighted_sum, 2),
     })
     health.setdefault("score_30d_ago", result.score_30d_ago)
     health.setdefault("score_90d_ago", None)

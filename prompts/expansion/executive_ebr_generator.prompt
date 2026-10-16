@@ -1,12 +1,17 @@
 ---
 id: expansion.executive_ebr_generator
-version: 2.4.0
+version: 2.5.0
 model: claude-opus-5-5
 temperature: 0.4
 max_tokens: 8000
+inputs:
+  retention_context_json: catalog:retention_context|{}
+  roi_inputs_json: catalog:roi_inputs
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
+  variant: run:variant
+  today: run:today
+cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, retention_context_json, roi_inputs_json, feature_audit_json, expansion_brief_json, segment_benchmarks_json, variant, today]
-cache: [system]
 description: Turns product usage, business outcomes, and ROI inputs into a C-suite-ready Executive Business Review — a one-page narrative, a slide-by-slide script with talk tracks, an ROI table with low/base/high cases, structured pre-work for the CSM, and a pre-read email. Variant `standard` for cadence EBRs, `renewal` for pre-renewal value reviews, `expansion` for whitespace EBRs. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-CAD-01, PB-EXP-02, PB-RET-01]
 ---
@@ -18,10 +23,7 @@ Your output is not a deck. It is everything a CSM needs to *deliver* the deck: t
 </role>
 
 <context>
-Customer 360:
-<customer_360>
-{{customer_360_json}}
-</customer_360>
+The Customer 360 is supplied in the <customer_360> block of the user turn (it may be a per-prompt view; a `_view_note` field says what was trimmed, and the full document exists on disk). Outputs of earlier prompts in this chain are supplied in <prior_outputs>, keyed by prompt id.
 
 Retention context — this account's segment row from mart_retention_nrr_grr (so you can place the customer among peers):
 <retention_context>
@@ -33,15 +35,7 @@ ROI inputs — the CS Ops-maintained parameters and any outcome measurements:
 {{roi_inputs_json}}
 </roi_inputs>
 
-Feature audit output (adoption narrative, ranked recommendations, fading features):
-<feature_audit>
-{{feature_audit_json}}
-</feature_audit>
-
-Expansion brief (may be `{}`; present for `expansion` variant):
-<expansion_brief>
-{{expansion_brief_json}}
-</expansion_brief>
+The feature audit (adoption narrative, ranked recommendations, fading features) appears in <prior_outputs> under `adoption.feature_depth_audit`; for the `expansion` variant the expansion brief appears under `expansion.whitespace_expansion_finder`.
 
 Segment benchmarks: {{segment_benchmarks_json}}
 Variant: {{variant}}   (standard | renewal | expansion)
@@ -115,6 +109,7 @@ Call `emit_playbook_action` once. Specifics:
 - `ebr.prework` `{unknowns_to_confirm[] (3), missing_attendee, risk_to_preempt, suggested_duration_minutes}`.
 - `actions[]`: 2–4 (CRM write `cadence.last_ebr_prepared_at`, task "EBR: <account>", measurement tasks for unmeasured outcomes, optional opportunity-suggestion note for expansion variant).
 - `communications[]`: exactly one pre-read email, `requires_human_approval: true`.
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

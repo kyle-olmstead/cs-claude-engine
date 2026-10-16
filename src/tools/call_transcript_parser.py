@@ -31,6 +31,8 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 log = logging.getLogger("cse.transcripts")
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SENTIMENT_PROMPT = ROOT / "prompts" / "core" / "sentiment_analyzer.prompt"
 SENTIMENT_TOOL = "emit_sentiment_analysis"
 APPROX_CHARS_PER_TOKEN = 4
@@ -273,27 +275,18 @@ def chunk_transcript(t: Transcript, max_tokens: int = CHUNK_TOKENS) -> List[List
 # Claude analysis
 # ======================================================================================
 
-_HEADER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 _SCHEMA_RE = re.compile(r"<output_format>.*?(\{.*\})\s*</output_format>", re.DOTALL)
 
 
 def load_sentiment_prompt() -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
     """Return (body, header, embedded tool input_schema) from the sentiment_analyzer prompt file."""
-    text = SENTIMENT_PROMPT.read_text(encoding="utf-8")
-    m = _HEADER_RE.match(text)
-    if not m:
-        raise ValueError("sentiment_analyzer.prompt missing header")
-    header: Dict[str, Any] = {}
-    for line in m.group(1).splitlines():
-        k, _, v = line.partition(":")
-        if k.strip():
-            header[k.strip()] = v.strip().strip("[]").strip()
-    body = m.group(2)
-    sm = _SCHEMA_RE.search(body)
+    from src.prompts import parse_prompt_file
+    prompt = parse_prompt_file(SENTIMENT_PROMPT)
+    header = {"model": prompt.model, "max_tokens": prompt.max_tokens, "temperature": prompt.temperature, "inputs": prompt.inputs}
+    sm = _SCHEMA_RE.search(prompt.body)
     if not sm:
         raise ValueError("sentiment_analyzer.prompt: embedded schema not found")
-    schema = json.loads(sm.group(1))
-    return body, header, schema
+    return prompt.body, header, json.loads(sm.group(1))
 
 
 def analyze_segment_with_claude(segment_text: str, account_name: str, segment: str, source_type: str,
@@ -305,7 +298,7 @@ def analyze_segment_with_claude(segment_text: str, account_name: str, segment: s
                 .replace("{{source_type}}", source_type).replace("{{today}}", today or date.today().isoformat()))
     model = header.get("model") or os.environ.get("CLAUDE_MODEL", "claude-haiku-5-5")
     resp = client.messages.create(
-        model=model, max_tokens=int(header.get("max_tokens", 2048)), temperature=float(header.get("temperature", 0.0)),
+        model=model, max_tokens=int(header["max_tokens"]), temperature=float(header["temperature"]),
         system=[{"type": "text", "text": rendered, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": f"<untrusted_customer_text>\n{segment_text}\n</untrusted_customer_text>"}],
         tools=[{"name": SENTIMENT_TOOL, "description": "Emit the structured sentiment analysis for this text.", "input_schema": schema}],

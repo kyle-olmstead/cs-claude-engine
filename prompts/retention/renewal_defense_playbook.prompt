@@ -1,12 +1,14 @@
 ---
 id: retention.renewal_defense_playbook
-version: 2.1.0
+version: 2.2.0
 model: claude-sonnet-5-5
 temperature: 0.3
 max_tokens: 6000
+inputs:
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
+  today: run:today
+cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, rca_json, segment_benchmarks_json, today]
-cache: [system]
 description: Builds the renewal defense plan — scenarios, stakeholder asks, dated actions, and the customer-facing kickoff draft — from the Customer 360 and (when available) the churn_risk_rca output. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-RET-01, PB-RET-02]
 ---
@@ -18,15 +20,7 @@ A renewal is won in the 90 days before the renewal date by people who already tr
 </role>
 
 <context>
-Customer 360:
-<customer_360>
-{{customer_360_json}}
-</customer_360>
-
-Root-cause analysis (may be empty `{}` for PB-RET-02 standard defense):
-<rca>
-{{rca_json}}
-</rca>
+The Customer 360 is supplied in the <customer_360> block of the user turn (it may be a per-prompt view; a `_view_note` field says what was trimmed, and the full document exists on disk). Outputs of earlier prompts in this chain are supplied in <prior_outputs>, keyed by prompt id. For PB-RET-01 the RCA appears there under `retention.churn_risk_rca`; for PB-RET-02 there is none (standard defense).
 
 Segment benchmarks: {{segment_benchmarks_json}}
 Today: {{today}}
@@ -82,6 +76,7 @@ Call `emit_playbook_action` once. Specifics:
 - `actions[]`: 4–8, sequenced, each with `depends_on` (index) where relevant.
 - `communications[]`: exactly one kickoff draft, `requires_human_approval: true`.
 - `renewal_outlook`: required.
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

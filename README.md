@@ -195,7 +195,8 @@ cs-claude-engine/
 ├── docs/          Server quickstart · architecture · metrics (every formula) · playbook index
 ├── playbooks/     Long-form operating playbooks with triggers, timelines, roles, exit criteria
 ├── CONNECTORS.md  How tool categories map to real products
-└── examples/      A complete sample account and a sample conversation
+├── examples/      A complete sample account and a sample conversation
+└── tests/         The checks CI runs on every change (pytest)
 ```
 
 Every technical document opens with a plain-English summary so you can stop reading when you've learned what you came for.

@@ -7,6 +7,24 @@ Conventions used below:
 - "Flag:" is the exact string to append to `data_quality_flags[]` when the field cannot be filled.
 - A field with no fallback and no flag is required by the schema; set it to a safe default noted in the row and flag it.
 
+
+**Index (read only the section you need):**
+
+- `account` — starts at line 30
+- `contract` — starts at line 44
+- `health` — starts at line 58
+- `usage` — starts at line 70
+- `support` — starts at line 93
+- `sentiment` — starts at line 107
+- `relationship` — starts at line 121
+- `opportunities` — starts at line 137
+- `whitespace` — starts at line 141
+- `cadence` — starts at line 151
+- `lifecycle` — starts at line 155
+- `conversations` — starts at line 166
+- `actions_last_30d` — starts at line 170
+- `benchmarks` — starts at line 174
+
 ---
 
 ## `account`

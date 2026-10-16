@@ -1,12 +1,15 @@
 ---
 id: adoption.feature_depth_audit
-version: 2.0.0
+version: 2.1.0
 model: claude-sonnet-5-5
 temperature: 0.2
 max_tokens: 4096
+inputs:
+  segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
+  feature_catalog_json: catalog:feature_catalog
+  today: run:today
+cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-variables: [customer_360_json, segment_benchmarks_json, feature_catalog_json, today]
-cache: [system]
 description: Compares an account's feature adoption to green-median peers in its segment, ranks unused features by retention lift × fit, maps each to the persona who should adopt it and the enablement asset to use. Feeds PB-ADP-02 directly and provides the adoption narrative for PB-CAD-01 (EBR) and the fit evidence for PB-EXP-01/02. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-ADP-02, PB-CAD-01, PB-EXP-01, PB-EXP-02]
 ---
@@ -18,10 +21,7 @@ You are not a product marketer. You do not recommend features because they are n
 </role>
 
 <context>
-Customer 360:
-<customer_360>
-{{customer_360_json}}
-</customer_360>
+The Customer 360 is supplied in the <customer_360> block of the user turn (it may be a per-prompt view; a `_view_note` field says what was trimmed, and the full document exists on disk). Outputs of earlier prompts in this chain are supplied in <prior_outputs>, keyed by prompt id.
 
 Segment benchmarks (includes `feature_depth_green_median`, `power_user_ratio_green_median`): {{segment_benchmarks_json}}
 
@@ -80,6 +80,7 @@ Call `emit_playbook_action` once. Specifics:
 - `feature_audit.expansion_fit_notes[]`: features in unowned modules with the persona/outcome fit evidence.
 - `actions[]`: 2–5 (enablement session, nudge sequence enqueue, prerequisite fix, re-engagement).
 - `communications[]`: 0–2, `requires_human_approval: true` for email; in-app nudges are actions of type `digital_nudge`, not communications.
+Length discipline: the tool call must complete inside the token budget. Keep diagnosis.summary to six sentences or fewer, each talk_track to 120 words or fewer, each communication body to 180 words or fewer, and every free-text field to the minimum that carries the point. If asked to fix a truncated output, shorten these fields first; never drop a required field to fit.
 </output_format>
 
 <examples>

@@ -35,7 +35,7 @@ properties for business outcomes, opt-outs, and any `tech_stack` property.
 
 ## Step 2 — Pull each block from its source
 
-Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/field-sources.md` field by field.
+Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/field-sources.md`, reading only the section for the block being filled (the file is one section per block; the index at the top gives the line ranges) rather than the whole file.
 It names, for every Customer 360 field: the category it comes from, how to compute it from raw
 records when the connector only exposes records, the fallback source, and the flag to set when
 nothing is available. Work block by block:

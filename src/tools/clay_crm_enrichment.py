@@ -29,6 +29,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from dataclasses import dataclass, asdict
 from datetime import date, datetime, timezone
@@ -180,13 +181,16 @@ def parse_clay_callback(payload: Dict[str, Any]) -> EnrichedPerson:
 class ClayResultStore:
     """Append-only JSONL store for callbacks; latest row per contact wins."""
 
+    _lock = threading.Lock()   # the orchestrator appends from worker threads
+
     def __init__(self, path: Path = DEFAULT_STORE):
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def append(self, person: EnrichedPerson) -> None:
-        with self.path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(person.to_dict()) + "\n")
+        line = json.dumps(person.to_dict()) + "\n"
+        with self._lock, self.path.open("a", encoding="utf-8") as fh:
+            fh.write(line)
 
     def latest(self) -> Dict[str, EnrichedPerson]:
         out: Dict[str, EnrichedPerson] = {}

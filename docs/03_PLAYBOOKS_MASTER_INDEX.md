@@ -207,9 +207,9 @@ AND count(accounts where csm_owner_id == csm.id and health.band == "red") >= 2
 ## H. Trigger evaluation rules (shared)
 
 1. **Freshness.** A trigger only fires on documents whose `as_of_date` is today or yesterday. Stale feeds raise a drift alarm, not actions.
-2. **Suppression window.** Each playbook has a `cooldown_days` (RET-01: 14, RET-02: 30, ADP-01: 7, ADP-02: 21, CAD-01: 60, EXP-01: 30, EXP-02: 45). Re-firing inside the window appends a `signal_update` to the open action instead of creating a new one.
+2. **Suppression window.** Each playbook has a `cooldown_days` (RET-01: 14, RET-02: 30, ADP-01: 7, ADP-02: 21, CAD-01: 60, EXP-01: 30, EXP-02: 45), enforced by `src/triggers.py::evaluate_triggers` via `actions_last_30d[]`. Re-firing inside the window while the action is still open produces a `signal_update` file referencing the open action instead of a new plan. The registry table below is generated from the same code (`registry_table()`) and injected into the orchestrator prompt, so prompt, docs, and code cannot disagree on triggers.
 3. **Mutual exclusion.** P0 suppresses P3 on the same account in the same run. P1 and P2 may co-fire.
-4. **Confidence floor.** Actions with `confidence < 0.55` are written to `out/` and the approval queue with `priority = "P3"` regardless of playbook priority, and flagged `low_confidence`.
+4. **Confidence floor.** Actions with `confidence < 0.55` have their priority lowered to `P3` by `src/validation.py::enforce_policy` (recorded in `data_quality_flags` as `policy: …`), regardless of what the playbook emitted.
 5. **Human override.** A CSM can set `account.cse_opt_out_playbooks[]` in the CRM to suppress specific playbooks (e.g., during a live escalation they are already handling). The orchestrator honors it and logs the suppression.
 
 ---
