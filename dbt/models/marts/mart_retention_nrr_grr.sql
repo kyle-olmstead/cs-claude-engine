@@ -1,8 +1,7 @@
 {{
     config(
         materialized = 'table',
-        tags = ['cs_claude_engine', 'retention'],
-        cluster_by = ['period_month']
+        tags = ['cs_claude_engine', 'retention']
     )
 }}
 
@@ -29,6 +28,7 @@
     contracted ramp is not a CS outcome.
 
     Upstream: int_arr_daily_snapshot (account_id, snapshot_date, arr, segment, arr_change_reason)
+    Dialect: dbt.last_day / dbt.dateadd cross-database macros; runs on DuckDB, Snowflake, BigQuery, Postgres, Databricks.
 
     This mart is cheap (month-end snapshots only) and is rebuilt fully each run; the Python
     mirror is src/models/metrics_calculator.py::cohort_retention.
@@ -38,7 +38,7 @@ with
 
 month_ends as (
     -- every month-end present in the snapshot table
-    select distinct last_day(snapshot_date) as month_end
+    select distinct {{ dbt.last_day('snapshot_date', 'month') }} as month_end
     from {{ ref('int_arr_daily_snapshot') }}
 ),
 
@@ -47,10 +47,10 @@ snapshots as (
     select
         s.account_id,
         s.segment,
-        last_day(s.snapshot_date)                                   as month_end,
+        {{ dbt.last_day('s.snapshot_date', 'month') }}                                   as month_end,
         s.arr,
         s.arr_change_reason,
-        row_number() over (partition by s.account_id, last_day(s.snapshot_date) order by s.snapshot_date desc) as rn
+        row_number() over (partition by s.account_id, {{ dbt.last_day('s.snapshot_date', 'month') }} order by s.snapshot_date desc) as rn
     from {{ ref('int_arr_daily_snapshot') }} s
 ),
 
@@ -64,9 +64,9 @@ month_end_arr as (
 -- Period definitions: for each t1 month-end, t0 is 1 month earlier (monthly) or 12 (ttm)
 -- ---------------------------------------------------------------------------------
 periods as (
-    select m.month_end as t1, last_day(dateadd(month, -1,  m.month_end)) as t0, 'monthly' as window_type from month_ends m
+    select m.month_end as t1, {{ dbt.last_day(dbt.dateadd('month', -1, 'm.month_end'), 'month') }} as t0, 'monthly' as window_type from month_ends m
     union all
-    select m.month_end as t1, last_day(dateadd(month, -12, m.month_end)) as t0, 'ttm'     as window_type from month_ends m
+    select m.month_end as t1, {{ dbt.last_day(dbt.dateadd('month', -12, 'm.month_end'), 'month') }} as t0, 'ttm'     as window_type from month_ends m
 ),
 
 -- ---------------------------------------------------------------------------------
@@ -158,9 +158,9 @@ ratios as (
     select
         a.*,
         -- core ratios
-        end_arr_cohort / nullif(start_arr, 0)                                                                 as nrr,
-        least(1.0, (start_arr - contraction_arr - churn_arr) / nullif(start_arr, 0))                           as grr,
-        churned_logos / nullif(cohort_logos, 0)::float                                                        as logo_churn_rate,
+        case when start_arr > 0 then end_arr_cohort / start_arr end                                           as nrr,
+        case when start_arr > 0 then least(1.0, (start_arr - contraction_arr - churn_arr) / start_arr) end         as grr,   -- explicit null: least() swallows nulls on some engines
+        churned_logos / cast(nullif(cohort_logos, 0) as double)                                                        as logo_churn_rate,
         churn_arr / nullif(start_arr, 0)                                                                      as dollar_churn_rate,
         (churn_arr + contraction_arr - expansion_arr) / nullif(start_arr, 0)                                   as net_dollar_churn,
         -- ex-ramp NRR: remove ramp-driven expansion from the numerator

@@ -1,0 +1,33 @@
+# dbt profiles for this project. Run dbt with DBT_PROFILES_DIR=dbt (or copy this file to ~/.dbt/). The default `dev` target is local DuckDB; the others read credentials from env vars.
+cs_claude_engine:
+  target: dev
+  outputs:
+    dev:                       # local, no warehouse needed — runs the marts on the bundled seeds
+      type: duckdb
+      path: dev.duckdb        # relative to where you run dbt (this folder)
+      threads: 4
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: TRANSFORMER
+      warehouse: TRANSFORMING
+      database: ANALYTICS
+      schema: cs_engine
+      threads: 8
+    bigquery:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT') }}"
+      dataset: cs_engine
+      threads: 8
+    postgres:
+      type: postgres
+      host: "{{ env_var('PGHOST') }}"
+      user: "{{ env_var('PGUSER') }}"
+      password: "{{ env_var('PGPASSWORD') }}"
+      port: 5432
+      dbname: analytics
+      schema: cs_engine
+      threads: 4

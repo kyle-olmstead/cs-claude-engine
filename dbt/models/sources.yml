@@ -1,0 +1,135 @@
+version: 2
+
+# The fourteen upstream tables the engine expects. Point `source_database` / `source_schema`
+# (dbt vars) at wherever your ELT lands them and set each `identifier` to your table name.
+# Column names here are what the staging models select; rename inside the staging model if
+# your source uses different names. The bundled seeds create these exact tables locally.
+
+sources:
+  - name: raw
+    database: "{{ var('source_database') or target.database }}"
+    schema: "{{ var('source_schema') or target.schema }}"
+    tables:
+      - name: crm_companies
+        description: One row per account/company in the CRM.
+        columns:
+          - {name: id, description: CRM record id — becomes account_id}
+          - {name: name}
+          - {name: segment, description: enterprise | mid_market | smb | digital (map in staging if yours differ)}
+          - {name: owner_id, description: CSM owner id}
+          - {name: industry}
+          - {name: created_at}
+      - name: crm_contacts
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: email}
+          - {name: title}
+          - {name: seniority, description: c_level | vp | director | manager | individual_contributor | unknown}
+          - {name: persona, description: economic_buyer | champion | executive_sponsor | admin | end_user | procurement | it_security | developer | ops_manager | unknown}
+          - {name: function}
+          - {name: is_champion}
+          - {name: is_exec_sponsor}
+          - {name: left_company_at}
+          - {name: enriched_employer, description: Current employer per enrichment (Clay etc.); null if never enriched}
+          - {name: tenure_months}
+      - name: crm_activities
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: contact_id}
+          - {name: activity_type, description: email | call | meeting | note}
+          - {name: direction, description: inbound | outbound}
+          - {name: occurred_at}
+          - {name: owner_id, description: internal user who logged it}
+      - name: crm_opportunities
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: type, description: new | renewal | expansion | upsell | cross_sell}
+          - {name: stage}
+          - {name: amount}
+          - {name: created_at}
+          - {name: close_date}
+          - {name: is_closed}
+          - {name: is_won}
+      - name: billing_subscriptions
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: product_sku}
+          - {name: seats_purchased}
+          - {name: mrr}
+          - {name: term_start}
+          - {name: term_end}
+          - {name: status}
+      - name: billing_arr_daily
+        description: Daily ARR snapshot per account (the most important table — every revenue metric derives from it).
+        columns:
+          - {name: company_id}
+          - {name: snapshot_date}
+          - {name: arr}
+          - {name: seats_purchased}
+          - {name: term_start}
+          - {name: term_end}
+          - {name: payment_days_past_due}
+          - {name: arr_change_reason, description: contract_ramp | expansion | contraction | price_change | fx | null}
+      - name: product_daily_usage
+        columns:
+          - {name: company_id}
+          - {name: user_email}
+          - {name: usage_date}
+          - {name: sessions}
+          - {name: events}
+          - {name: minutes_active}
+      - name: product_feature_events
+        columns:
+          - {name: company_id}
+          - {name: user_email}
+          - {name: feature_key}
+          - {name: is_core_feature}
+          - {name: event_at}
+      - name: product_value_milestones
+        columns:
+          - {name: company_id}
+          - {name: milestone_key}
+          - {name: reached_at}
+      - name: support_tickets
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: priority, description: P1..P4 (map urgent/high/normal/low in staging)}
+          - {name: status}
+          - {name: created_at}
+          - {name: first_response_at}
+          - {name: resolved_at}
+          - {name: csat_score, description: 1–5}
+      - name: survey_responses
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: contact_id}
+          - {name: survey_type, description: nps | csat}
+          - {name: score}
+          - {name: verbatim}
+          - {name: responded_at}
+      - name: conversation_calls
+        columns:
+          - {name: id}
+          - {name: company_id}
+          - {name: occurred_at}
+          - {name: duration_sec}
+          - {name: transcript_uri}
+          - {name: participants_json}
+      - name: transcript_sentiment
+        description: Output of src/tools/call_transcript_parser.py, one row per analyzed call.
+        columns:
+          - {name: call_id}
+          - {name: company_id}
+          - {name: occurred_at}
+          - {name: sentiment, description: -1..1}
+      - name: csm_cost
+        columns:
+          - {name: owner_id}
+          - {name: month}
+          - {name: fully_loaded_cost}

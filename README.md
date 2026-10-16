@@ -191,7 +191,8 @@ cs-claude-engine/
 ├── prompts/       8 versioned prompts — how the engine reasons (guardrails built in)
 ├── src/           Python — health score, retention math, orchestrator, validator, CRM/enrichment/transcript tools
 ├── src/schemas/   The two contracts: customer_360.json (input) and playbook_action.json (output)
-├── sql/           dbt models for daily health and monthly/trailing-12 NRR & GRR
+├── dbt/           A runnable dbt project: sources, 14 staging models, the two marts, tests, and seeds that build on your laptop
+├── scripts/       Seed generator, SQL↔Python parity check, weight sync
 ├── docs/          Server quickstart · architecture · metrics (every formula) · playbook index
 ├── playbooks/     Long-form operating playbooks with triggers, timelines, roles, exit criteria
 ├── CONNECTORS.md  How tool categories map to real products

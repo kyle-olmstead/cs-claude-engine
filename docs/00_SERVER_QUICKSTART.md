@@ -7,8 +7,8 @@
 ## Prerequisites
 
 * Python 3.10+
-* An Anthropic API key (`ANTHROPIC_API_KEY`)
-* A warehouse with the staging models referenced in `sql/dbt_marts/` (Snowflake, BigQuery, Databricks, Postgres, or Redshift — the SQL is written to the ANSI subset dbt compiles portably, with the dialect-specific functions isolated and commented in each model's header)
+* An Anthropic API key (`ANTHROPIC_API_KEY`) — for live runs only; everything below up to "Run against your warehouse" works without one
+* For your own data: a warehouse dbt supports (Snowflake, BigQuery, Databricks, Postgres, Redshift) with your CRM, billing, product, support, survey and call data landed by your ELT tool
 * Optional: HubSpot private-app token, Salesforce connected-app credentials, Clay webhook URL, Slack bot token
 
 ## Install
@@ -17,20 +17,35 @@
 git clone https://github.com/kyle-olmstead/cs-claude-engine.git
 cd cs-claude-engine
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt dbt-duckdb        # dbt-duckdb is for the local run; add dbt-snowflake / dbt-bigquery / dbt-postgres for yours
 ```
+
+## Two minutes: the whole pipeline on your laptop, no warehouse
+
+The repo ships a complete dbt project (`dbt/`) with the fourteen upstream tables as **seeds** — a synthetic history for three accounts, including the sample account from `examples/`. It builds on DuckDB, runs the marts and their tests, and the parity script proves the SQL health score and the Python health score agree to the cent.
+
+```bash
+cd dbt
+DBT_PROFILES_DIR=. dbt seed --quiet                         # load the 14 seed tables into dev.duckdb
+DBT_PROFILES_DIR=. dbt build --exclude resource_type:seed   # 18 models + 14 tests
+cd ..
+python scripts/check_parity.py                             # SQL ↔ Python health score, per account
+```
+
+Expected: `PASS=32`, then a parity table ending in `PARITY OK`. You now have `dbt/dev.duckdb` with `mart_customer_health_daily` (850 account-days) and `mart_retention_nrr_grr` to query.
 
 ## Configure
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-export CLAUDE_MODEL=claude-sonnet-5-5          # any current Claude model id; override per prompt via its header
+export CLAUDE_MODEL=claude-sonnet-5-5          # any current Claude model id; prompt headers may override
 export HUBSPOT_ACCESS_TOKEN=pat-na1-...       # optional
 export CLAY_WEBHOOK_URL=https://api.clay.com/v3/sources/webhook/...   # optional
 export SLACK_BOT_TOKEN=xoxb-...               # optional
 export SLACK_ALERT_CHANNEL=#cs-alerts         # optional
 export CSE_DRY_RUN=true                       # default: never write to CRM unless explicitly disabled
 ```
+A `.env` file in the repo root is loaded automatically.
 
 If the engine will write back to HubSpot, create these custom properties first — four text properties on **Company** (`cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`), one on Company and one on Task for idempotency (`cse_external_id`), and a date property `cse_last_playbook_at` on Company. Salesforce equivalents are external-id fields `CSE_External_Id__c` on Account, Contact, and Task.
 
@@ -52,9 +67,16 @@ python -m src.orchestrator --input examples/sample_customer_360.json --dry-run -
 
 ## Run against your warehouse
 
+Pointing the project at real data is three edits, all in `dbt/`:
+
+1. **Profile** — add your warehouse target to `dbt/profiles.yml` (templates for Snowflake, BigQuery and Postgres are already there, reading credentials from env vars) and run with `--target <name>`.
+2. **Sources** — in `dbt/models/sources.yml`, set the dbt vars `source_database` / `source_schema` to where your ELT lands the raw tables, and change each table's `identifier` to your table name. The column names each staging model expects are documented there; if yours differ, rename inside the matching `dbt/models/staging/stg_*.sql` — that is the only place source column names appear.
+3. **Weights** — `config/health_weights.json` is the single source of truth; `python scripts/sync_health_weights.py --write` copies it into `dbt_project.yml`, and `--check` runs in CI so the two can never drift.
+
 ```bash
-# 1. Build the marts
-dbt run --select mart_customer_health_daily mart_retention_nrr_grr
+# 1. Build the marts against your warehouse
+cd dbt && DBT_PROFILES_DIR=. dbt build --exclude resource_type:seed --target snowflake && cd ..
+python scripts/check_parity.py --jsonl <latest mart rows exported as JSONL>   # or extend the script with your warehouse client
 
 # 2. Export today's Customer 360 feed (one JSON object per line) from your warehouse into ./feeds/
 #    The orchestrator accepts .json, .jsonl, a directory of either, or a directory of accounts/<id>/customer_360.json.

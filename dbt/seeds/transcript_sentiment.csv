@@ -1,0 +1,4 @@
+call_id,company_id,occurred_at,sentiment
+call_20260826,acc_01HZXK3V8Q,2026-08-26,0.6
+call_20260930,acc_01HZXK3V8Q,2026-09-30,0.3
+call_fab_01,acc_02FABRIKAM,2026-10-06,-0.4

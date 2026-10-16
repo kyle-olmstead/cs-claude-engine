@@ -1,0 +1,9 @@
+id,company_id,email,title,seniority,persona,function,is_champion,is_exec_sponsor,left_company_at,enriched_employer,tenure_months
+ct_01,acc_01HZXK3V8Q,jordan.reyes@contoso.example,"Director, Operations Systems",director,champion,operations,True,False,,Northwind Traders,14
+ct_02,acc_01HZXK3V8Q,elena.vasquez@contoso.example,SVP Finance Operations,vp,executive_sponsor,finance,False,True,,Contoso Logistics,48
+ct_03,acc_01HZXK3V8Q,sam.okafor@contoso.example,Finance Systems Admin,individual_contributor,admin,finance,False,False,,Contoso Logistics,30
+ct_04,acc_01HZXK3V8Q,tasha.l@contoso.example,Fleet Operations Manager,manager,ops_manager,fleet,False,False,,,22
+ct_05,acc_01HZXK3V8Q,raj.mehta@contoso.example,VP Procurement,vp,procurement,procurement,False,False,,,60
+ct_11,acc_02FABRIKAM,dana.k@fabrikam.example,Head of Revenue Ops,director,champion,operations,True,False,,Fabrikam Health,20
+ct_12,acc_02FABRIKAM,omar.s@fabrikam.example,CFO,c_level,economic_buyer,finance,False,True,,Fabrikam Health,70
+ct_21,acc_03BRIGHTL,lee@brightline.example,Studio Manager,manager,admin,operations,True,False,,,8

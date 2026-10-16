@@ -1,0 +1,4 @@
+id,company_id,occurred_at,duration_sec,transcript_uri,participants_json
+call_20260826,acc_01HZXK3V8Q,2026-08-26,2700,,"[""ct_02"",""ct_03""]"
+call_20260930,acc_01HZXK3V8Q,2026-09-30,1800,,"[""ct_03""]"
+call_fab_01,acc_02FABRIKAM,2026-10-06,2400,,"[""ct_11""]"

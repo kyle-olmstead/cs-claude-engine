@@ -6,17 +6,17 @@
   },
   "metadata": {
     "description": "Marketplace for the CS-Claude Engine plugin (plugin id: cs-engine). Add this repository as a marketplace, then install cs-engine from it.",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "cs-engine",
-      "description": "AI Customer Success operating system: Customer 360 assembly, explainable health scoring, churn RCA, renewal defense, onboarding acceleration, feature-depth audit, expansion whitespace, executive business reviews, and a scheduled book review \u2014 all against the connectors you already have.",
+      "description": "AI Customer Success operating system: Customer 360 assembly, explainable health scoring, churn RCA, renewal defense, onboarding acceleration, feature-depth audit, expansion whitespace, executive business reviews, and a scheduled book review — all against the connectors you already have.",
       "source": {
         "source": "github",
         "repo": "kyle-olmstead/cs-claude-engine"
       },
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "Kyle Olmstead"
       },

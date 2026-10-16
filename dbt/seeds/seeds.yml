@@ -1,0 +1,30 @@
+version: 2
+seeds:
+  - name: crm_companies
+    config: {column_types: {id: varchar, owner_id: varchar, created_at: date}}
+  - name: crm_contacts
+    config: {column_types: {id: varchar, company_id: varchar, left_company_at: date, is_champion: boolean, is_exec_sponsor: boolean, tenure_months: integer}}
+  - name: crm_activities
+    config: {column_types: {id: varchar, company_id: varchar, contact_id: varchar, owner_id: varchar, occurred_at: date}}
+  - name: crm_opportunities
+    config: {column_types: {id: varchar, company_id: varchar, amount: double, created_at: date, close_date: date, is_closed: boolean, is_won: boolean}}
+  - name: billing_subscriptions
+    config: {column_types: {id: varchar, company_id: varchar, seats_purchased: integer, mrr: double, term_start: date, term_end: date}}
+  - name: billing_arr_daily
+    config: {column_types: {company_id: varchar, snapshot_date: date, arr: double, seats_purchased: integer, term_start: date, term_end: date, payment_days_past_due: integer}}
+  - name: product_daily_usage
+    config: {column_types: {company_id: varchar, usage_date: date, sessions: integer, events: integer, minutes_active: double}}
+  - name: product_feature_events
+    config: {column_types: {company_id: varchar, is_core_feature: boolean, event_at: date}}
+  - name: product_value_milestones
+    config: {column_types: {company_id: varchar, reached_at: date}}
+  - name: support_tickets
+    config: {column_types: {id: varchar, company_id: varchar, created_at: timestamp, first_response_at: timestamp, resolved_at: timestamp, csat_score: double}}
+  - name: survey_responses
+    config: {column_types: {id: varchar, company_id: varchar, contact_id: varchar, score: integer, responded_at: date}}
+  - name: conversation_calls
+    config: {column_types: {id: varchar, company_id: varchar, occurred_at: date, duration_sec: integer}}
+  - name: transcript_sentiment
+    config: {column_types: {call_id: varchar, company_id: varchar, occurred_at: date, sentiment: double}}
+  - name: csm_cost
+    config: {column_types: {owner_id: varchar, month: date, fully_loaded_cost: double}}

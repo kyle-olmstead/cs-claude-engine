@@ -4,3 +4,10 @@ __pycache__/
 out/
 feeds/
 .env
+
+# dbt local artifacts
+dbt/dev.duckdb
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml

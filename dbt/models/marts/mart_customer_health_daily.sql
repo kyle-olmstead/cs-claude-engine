@@ -2,9 +2,8 @@
     config(
         materialized = 'incremental',
         unique_key   = ['account_id', 'as_of_date'],
-        incremental_strategy = 'merge',
+        incremental_strategy = cse_incremental_strategy(),
         on_schema_change = 'append_new_columns',
-        cluster_by = ['as_of_date'],
         tags = ['cs_claude_engine', 'health']
     )
 }}
@@ -33,9 +32,9 @@
         stg_support__tickets, stg_survey__responses, int_champion_status,
         int_transcript_sentiment_daily (optional; from call_transcript_parser output)
 
-    Dialect notes: written for Snowflake/BigQuery/Postgres-compatible SQL via dbt.
-    The only dialect-specific pieces are isolated in the `date_add_days` and `date_diff_days`
-    macros (define them in macros/ for your warehouse; defaults below assume Snowflake).
+    Dialect notes: date arithmetic uses dbt's cross-database macros (dbt.dateadd, dbt.datediff,
+    dbt.concat, dbt.type_string); the median uses macros/median_of.sql. Runs unchanged on DuckDB
+    (local dev via seeds), Snowflake, BigQuery, Postgres/Redshift, and Databricks.
 */
 
 {% set w = var('health_weights', {'adoption': 0.25, 'engagement': 0.15, 'support': 0.15, 'sentiment': 0.15, 'relationship': 0.15, 'commercial': 0.15}) %}
@@ -50,7 +49,7 @@ dates as (
     select distinct snapshot_date as as_of_date
     from {{ ref('int_arr_daily_snapshot') }}
     {% if is_incremental() %}
-    where snapshot_date >= dateadd(day, -3, (select max(as_of_date) from {{ this }}))
+    where snapshot_date >= {{ dbt.dateadd('day', -3, '(select max(as_of_date) from ' ~ this ~ ')') }}
     {% endif %}
 ),
 
@@ -65,7 +64,7 @@ accounts as (
         s.seats_purchased,
         s.term_start,
         s.term_end,
-        datediff(day, s.snapshot_date, s.term_end) as days_to_renewal,
+        {{ dbt.datediff('s.snapshot_date', 's.term_end', 'day') }} as days_to_renewal,
         s.payment_days_past_due,
         s.arr_90d_ago,
         case when s.arr < s.arr_90d_ago or s.seats_purchased < s.seats_purchased_90d_ago then true else false end as contraction_flag_90d
@@ -84,12 +83,12 @@ usage_30d as (
         a.as_of_date,
         count(distinct u.user_email)                                              as mau_30d,
         count(distinct case when u.sessions > 0 then u.user_email end)           as active_users_30d,
-        count(distinct u.usage_date || '|' || u.user_email) / 30.0               as avg_dau_30d,
+        count(distinct {{ dbt.concat(["cast(u.usage_date as " ~ dbt.type_string() ~ ")", "'|'", 'u.user_email']) }}) / 30.0               as avg_dau_30d,
         max(u.usage_date)                                                        as last_login_date
     from accounts a
     left join {{ ref('stg_product__daily_usage') }} u
         on u.account_id = a.account_id
-       and u.usage_date >  dateadd(day, -30, a.as_of_date)
+       and u.usage_date >  {{ dbt.dateadd('day', -30, 'a.as_of_date') }}
        and u.usage_date <= a.as_of_date
        and u.sessions > 0
     group by 1, 2
@@ -103,8 +102,8 @@ usage_90d_ago as (
     from accounts a
     left join {{ ref('stg_product__daily_usage') }} u
         on u.account_id = a.account_id
-       and u.usage_date >  dateadd(day, -120, a.as_of_date)
-       and u.usage_date <= dateadd(day,  -90, a.as_of_date)
+       and u.usage_date >  {{ dbt.dateadd('day', -120, 'a.as_of_date') }}
+       and u.usage_date <= {{ dbt.dateadd('day', -90, 'a.as_of_date') }}
        and u.sessions > 0
     group by 1, 2
 ),
@@ -118,7 +117,7 @@ features_30d as (
     from accounts a
     left join {{ ref('stg_product__feature_events') }} f
         on f.account_id = a.account_id
-       and f.event_at >  dateadd(day, -30, a.as_of_date)
+       and f.event_at >  {{ dbt.dateadd('day', -30, 'a.as_of_date') }}
        and f.event_at <= a.as_of_date
     group by 1, 2
 ),
@@ -135,16 +134,16 @@ contact_engagement as (
     select
         a.account_id,
         a.as_of_date,
-        count(distinct case when act.occurred_at > dateadd(day, -90, a.as_of_date) then act.contact_id end)                       as engaged_contacts_90d,
-        count(distinct case when act.occurred_at > dateadd(day, -90, a.as_of_date) then coalesce(c.function, c.persona) end)     as functions_engaged_90d,
-        count(distinct case when act.occurred_at > dateadd(day, -90, a.as_of_date) then c.seniority end)                        as seniorities_engaged_90d,
-        max(case when c.is_exec_sponsor and act.occurred_at > dateadd(day, -180, a.as_of_date) then 1 else 0 end) = 1           as exec_sponsor_engaged_180d,
+        count(distinct case when act.occurred_at > {{ dbt.dateadd('day', -90, 'a.as_of_date') }} then act.contact_id end)                       as engaged_contacts_90d,
+        count(distinct case when act.occurred_at > {{ dbt.dateadd('day', -90, 'a.as_of_date') }} then coalesce(c.function, c.persona) end)     as functions_engaged_90d,
+        count(distinct case when act.occurred_at > {{ dbt.dateadd('day', -90, 'a.as_of_date') }} then c.seniority end)                        as seniorities_engaged_90d,
+        max(case when c.is_exec_sponsor and act.occurred_at > {{ dbt.dateadd('day', -180, 'a.as_of_date') }} then 1 else 0 end) = 1           as exec_sponsor_engaged_180d,
         max(case when act.direction = 'outbound' and act.owner_id = a.csm_owner_id then act.occurred_at end)                     as last_csm_touch_at
     from accounts a
     left join {{ ref('stg_crm__activities') }} act
         on act.account_id = a.account_id
        and act.occurred_at <= a.as_of_date
-       and act.occurred_at >  dateadd(day, -180, a.as_of_date)
+       and act.occurred_at >  {{ dbt.dateadd('day', -180, 'a.as_of_date') }}
     left join {{ ref('stg_crm__contacts') }} c
         on c.contact_id = act.contact_id
     group by 1, 2, a.csm_owner_id
@@ -168,11 +167,11 @@ support as (
         a.as_of_date,
         count(case when t.status not in ('solved', 'closed') and t.priority in ('P1', 'P2') then 1 end)                          as open_p1_p2,
         max(case when t.status not in ('solved', 'closed') and t.priority = 'P1'
-                  then datediff(day, t.created_at, a.as_of_date) end)                                                          as oldest_open_p1_age_days,
-        count(case when t.created_at > dateadd(day, -30, a.as_of_date) then 1 end)                                             as tickets_30d,
-        avg(case when t.csat_score is not null and t.resolved_at > dateadd(day, -90, a.as_of_date) then t.csat_score end)      as avg_csat_90d,
-        median(case when t.first_response_at is not null and t.created_at > dateadd(day, -90, a.as_of_date)
-                    then datediff(minute, t.created_at, t.first_response_at) / 60.0 end)                                      as median_first_response_hours_90d
+                  then {{ dbt.datediff('t.created_at', 'a.as_of_date', 'day') }} end)                                                          as oldest_open_p1_age_days,
+        count(case when t.created_at > {{ dbt.dateadd('day', -30, 'a.as_of_date') }} then 1 end)                                             as tickets_30d,
+        avg(case when t.csat_score is not null and t.resolved_at > {{ dbt.dateadd('day', -90, 'a.as_of_date') }} then t.csat_score end)      as avg_csat_90d,
+        {{ median_of("case when t.first_response_at is not null and t.created_at > " ~ dbt.dateadd('day', -90, 'a.as_of_date') ~ "
+                    then " ~ dbt.datediff('t.created_at', 't.first_response_at', 'minute') ~ " / 60.0 end") }}                               as median_first_response_hours_90d
     from accounts a
     left join {{ ref('stg_support__tickets') }} t
         on t.account_id = a.account_id
@@ -197,7 +196,7 @@ nps_latest_per_contact as (
         on r.account_id = a.account_id
        and r.survey_type = 'nps'
        and r.responded_at <= a.as_of_date
-       and r.responded_at >  dateadd(day, -180, a.as_of_date)
+       and r.responded_at >  {{ dbt.dateadd('day', -180, 'a.as_of_date') }}
     left join {{ ref('stg_crm__contacts') }} c on c.contact_id = r.contact_id
 ),
 
@@ -222,8 +221,8 @@ nps_prior as (
     join {{ ref('stg_survey__responses') }} r
         on r.account_id = a.account_id
        and r.survey_type = 'nps'
-       and r.responded_at <= dateadd(day, -90, a.as_of_date)
-       and r.responded_at >  dateadd(day, -270, a.as_of_date)
+       and r.responded_at <= {{ dbt.dateadd('day', -90, 'a.as_of_date') }}
+       and r.responded_at >  {{ dbt.dateadd('day', -270, 'a.as_of_date') }}
     group by 1, 2
 ),
 
@@ -235,7 +234,7 @@ transcripts as (
     from accounts a
     left join {{ ref('int_transcript_sentiment_daily') }} ts
         on ts.account_id = a.account_id
-       and ts.occurred_at >  dateadd(day, -30, a.as_of_date)
+       and ts.occurred_at >  {{ dbt.dateadd('day', -30, 'a.as_of_date') }}
        and ts.occurred_at <= a.as_of_date
     group by 1, 2
 ),
@@ -250,17 +249,17 @@ inputs as (
         case when u.mau_30d > 0 then least(u.avg_dau_30d / u.mau_30d, 1.0) end                                  as dau_mau_30d,
         u.mau_30d,
         u.active_users_30d,
-        f.core_features_used_30d / {{ core_feature_count }}::float                                              as feature_depth_30d,
-        f.all_features_used_30d / nullif(fu.all_feature_count, 0)::float                                        as feature_breadth_30d,
-        case when a.seats_purchased > 0 then u.active_users_30d / a.seats_purchased::float end                   as seat_utilization,
-        case when a.seats_purchased > 0 then u90.active_users_30d_at_90d_ago / a.seats_purchased::float end      as seat_utilization_90d_ago,
-        datediff(day, u.last_login_date, a.as_of_date)                                                          as days_since_last_login,
+        f.core_features_used_30d / cast({{ core_feature_count }} as double)                                              as feature_depth_30d,
+        f.all_features_used_30d / cast(nullif(fu.all_feature_count, 0) as double)                                        as feature_breadth_30d,
+        case when a.seats_purchased > 0 then u.active_users_30d / cast(a.seats_purchased as double) end                   as seat_utilization,
+        case when a.seats_purchased > 0 then u90.active_users_30d_at_90d_ago / cast(a.seats_purchased as double) end      as seat_utilization_90d_ago,
+        {{ dbt.datediff('u.last_login_date', 'a.as_of_date', 'day') }}                                                          as days_since_last_login,
         -- engagement / relationship
         ce.engaged_contacts_90d,
         case when ce.functions_engaged_90d >= 2 or ce.seniorities_engaged_90d >= 2 then ce.engaged_contacts_90d
              when ce.engaged_contacts_90d > 0 then 1 else 0 end                                                 as multithreading_depth,
         coalesce(ce.exec_sponsor_engaged_180d, false)                                                            as exec_sponsor_engaged_180d,
-        datediff(day, ce.last_csm_touch_at, a.as_of_date)                                                       as days_since_last_csm_touch,
+        {{ dbt.datediff('ce.last_csm_touch_at', 'a.as_of_date', 'day') }}                                                       as days_since_last_csm_touch,
         coalesce(ch.champion_status, 'none')                                                                     as champion_status,
         coalesce(ch.replacement_identified, false)                                                               as replacement_identified,
         -- support
@@ -424,8 +423,8 @@ scored as (
         p30.health_score                                                                                        as health_score_30d_ago,
         p90.health_score                                                                                        as health_score_90d_ago
     from raw_scores r
-    left join prior_rows p30 on p30.account_id = r.account_id and p30.as_of_date = dateadd(day, -30, r.as_of_date)
-    left join prior_rows p90 on p90.account_id = r.account_id and p90.as_of_date = dateadd(day, -90, r.as_of_date)
+    left join prior_rows p30 on p30.account_id = r.account_id and p30.as_of_date = {{ dbt.dateadd('day', -30, 'r.as_of_date') }}
+    left join prior_rows p90 on p90.account_id = r.account_id and p90.as_of_date = {{ dbt.dateadd('day', -90, 'r.as_of_date') }}
 ),
 
 final as (
@@ -454,6 +453,7 @@ final as (
         c_adoption, c_engagement, c_support, c_sentiment, c_relationship, c_commercial,
         contrib_adoption, contrib_engagement, contrib_support, contrib_sentiment, contrib_relationship, contrib_commercial,
         raw_weighted_sum,
+        prior_raw_30d                                                     as raw_weighted_sum_30d_ago,
         coalesce(trend_adjustment_calc, 0)                               as trend_adjustment,
 
         -- overrides (caps)

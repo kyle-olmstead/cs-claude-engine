@@ -1,0 +1,27 @@
+version: 2
+models:
+  - name: mart_customer_health_daily
+    description: One row per account per day — health components, score, band, and every raw input (docs/02_METRICS_TAXONOMY.md §B1).
+    columns:
+      - name: account_id
+        tests: [not_null]
+      - name: as_of_date
+        tests: [not_null]
+      - name: health_score
+        tests: [not_null]
+      - name: health_band
+        tests:
+          - accepted_values: {values: ["green", "yellow", "red"]}
+      - name: champion_status
+        tests:
+          - accepted_values: {values: ["active", "at_risk", "departed", "none"]}
+  - name: mart_retention_nrr_grr
+    description: Monthly and trailing-12 NRR/GRR/logo/dollar churn by segment plus ALL (docs/02_METRICS_TAXONOMY.md Part A).
+    columns:
+      - name: period_month
+        tests: [not_null]
+      - name: window_type
+        tests:
+          - accepted_values: {values: ["monthly", "ttm"]}
+      - name: segment
+        tests: [not_null]

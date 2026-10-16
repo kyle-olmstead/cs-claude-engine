@@ -1,0 +1,8 @@
+id,company_id,contact_id,survey_type,score,verbatim,responded_at
+nps_88213,acc_01HZXK3V8Q,ct_03,nps,9,Finance Ops lives in this now. The EU export hiccup is annoying but support has been quick.,2026-09-12
+nps_88214,acc_01HZXK3V8Q,ct_04,nps,6,Fleet hasn't really adopted it. We were told Jordan would drive that and now Jordan's gone.,2026-09-12
+nps_87001,acc_01HZXK3V8Q,ct_01,nps,9,"Great platform, team loves the dashboards.",2026-06-07
+nps_87002,acc_01HZXK3V8Q,ct_03,nps,8,,2026-06-06
+nps_87101,acc_02FABRIKAM,ct_11,nps,4,Still waiting on the data sync fix. Hard to recommend until that's sorted.,2026-10-03
+nps_87102,acc_02FABRIKAM,ct_12,nps,7,,2026-10-03
+nps_87201,acc_03BRIGHTL,ct_21,nps,9,Love it; we need more seats.,2026-10-10

@@ -1,0 +1,27 @@
+name: cs_claude_engine
+version: "1.2.0"
+config-version: 2
+profile: cs_claude_engine
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: target
+clean-targets: ["target", "dbt_packages"]
+vars:
+  health_weights:
+    adoption: 0.25
+    engagement: 0.15
+    support: 0.15
+    sentiment: 0.15
+    relationship: 0.15
+    commercial: 0.15
+  health_core_feature_count: 4
+  source_database: null
+  source_schema: null       # defaults to the target schema (where the seeds land); point at your ELT schema in production
+models:
+  cs_claude_engine:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: incremental

@@ -1,0 +1,4 @@
+id,company_id,type,stage,amount,created_at,close_date,is_closed,is_won
+opp_7781,acc_01HZXK3V8Q,renewal,Discovery,240000,2026-09-01,2027-01-18,False,
+opp_7700,acc_02FABRIKAM,expansion,Closed Won,12000,2026-06-17,2026-08-06,True,True
+opp_7790,acc_02FABRIKAM,renewal,Proposal,96000,2026-09-15,2026-12-15,False,

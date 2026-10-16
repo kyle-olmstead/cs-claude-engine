@@ -20,7 +20,7 @@ Compute the lagging and capacity metrics from `${CLAUDE_PLUGIN_ROOT}/docs/02_MET
 
 ## Source order
 
-1. `~~data warehouse` with `sql/dbt_marts/mart_retention_nrr_grr.sql` built → query the mart for the period, window (`monthly` / `ttm`), and segment. This is authoritative; use it as-is.
+1. `~~data warehouse` with `dbt/models/marts/mart_retention_nrr_grr.sql` built → query the mart for the period, window (`monthly` / `ttm`), and segment. This is authoritative; use it as-is.
 2. `~~billing` subscription history → build two ARR snapshots (t0, t1) per account with segment, write them as JSON, and run:
    ```bash
    python3 - <<'EOF'

@@ -1,7 +1,7 @@
 name: ci
 on: [push, pull_request]
 jobs:
-  test:
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,3 +12,21 @@ jobs:
       - run: pytest -q
       - run: python -m src.orchestrator --input examples/sample_customer_360.json --triggers-only --out /tmp/t
       - run: python -m src.orchestrator --input examples/sample_customer_360.json --offline --out /tmp/o
+      - run: python scripts/sync_health_weights.py --check
+  dbt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt dbt-duckdb duckdb
+      - name: Build the marts on DuckDB from the bundled seeds
+        working-directory: dbt
+        env:
+          DBT_PROFILES_DIR: .
+        run: |
+          dbt seed --quiet
+          dbt build --exclude resource_type:seed
+      - name: SQL ↔ Python health-score parity
+        run: python scripts/check_parity.py

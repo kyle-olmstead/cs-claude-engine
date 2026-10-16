@@ -34,7 +34,7 @@ Churn        = Σ ARR_a(t0)                             for a ∈ cohort, ARR_a(
 
 **Windows.** Monthly (t0 = prior month-end, t1 = this month-end) for operational tracking; trailing-12-month (t0 = 12 month-ends ago) for board reporting. Never annualize a monthly NRR by `^12` — it compounds noise.
 
-**Implementation.** `mart_retention_nrr_grr.sql` (columns `nrr_monthly`, `nrr_ttm`); `metrics_calculator.cohort_retention()`.
+**Implementation.** `dbt/models/marts/mart_retention_nrr_grr.sql` (columns `nrr_monthly`, `nrr_ttm`); `metrics_calculator.cohort_retention()`.
 
 **Benchmarks.** Enterprise SaaS top-quartile TTM NRR ≥ 120%; median ≈ 105%; < 100% means the installed base is shrinking before new logos.
 

@@ -2,7 +2,7 @@
 Weighted multi-variable Customer Health Score.
 
 Implements docs/02_METRICS_TAXONOMY.md §B1 exactly. The same formula is implemented in
-sql/dbt_marts/mart_customer_health_daily.sql; the orchestrator asserts the two agree
+dbt/models/marts/mart_customer_health_daily.sql; the orchestrator asserts the two agree
 within 0.5 points (see `assert_no_drift`).
 
 Design principles

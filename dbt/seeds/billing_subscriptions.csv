@@ -1,0 +1,4 @@
+id,company_id,product_sku,seats_purchased,mrr,term_start,term_end,status
+sub_acc_01HZXK3V8Q,acc_01HZXK3V8Q,core,500,20000.0,2025-01-18,2027-01-18,active
+sub_acc_02FABRIKAM,acc_02FABRIKAM,core,200,7000.0,2025-06-01,2026-12-15,active
+sub_acc_03BRIGHTL,acc_03BRIGHTL,core,20,800.0,2026-02-10,2027-02-10,active
