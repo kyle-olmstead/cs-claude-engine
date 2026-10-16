@@ -40,6 +40,11 @@ try:
 except ImportError:  # pragma: no cover
     jsonschema = None  # validated lazily with a clear error
 
+# Allow both `python -m src.orchestrator` and `python3 path/to/src/orchestrator.py` (plugin mode).
+_ROOT_FOR_IMPORT = Path(__file__).resolve().parents[1]
+if str(_ROOT_FOR_IMPORT) not in sys.path:
+    sys.path.insert(0, str(_ROOT_FOR_IMPORT))
+
 from src.models.health_score import (
     HealthScoreDriftError,
     HealthWeights,
@@ -735,8 +740,15 @@ class ActionRouter:
 # --------------------------------------------------------------------------------------
 
 def load_feed(path: Path) -> Iterable[Tuple[str, Dict[str, Any]]]:
-    """Yield (source_name, document) from a .json, .jsonl, or a directory of either."""
-    paths = sorted(path.iterdir()) if path.is_dir() else [path]
+    """
+    Yield (source_name, document) from a .json, .jsonl, or a directory.
+    A directory yields its top-level .json/.jsonl files plus any `customer_360.json` found in
+    subdirectories (the plugin's `cs-engine/accounts/<id>/customer_360.json` layout).
+    """
+    if path.is_dir():
+        paths = sorted(p for p in path.iterdir() if p.is_file()) + sorted(path.glob("*/customer_360.json"))
+    else:
+        paths = [path]
     for p in paths:
         if p.suffix == ".jsonl":
             with p.open(encoding="utf-8") as fh:
@@ -868,6 +880,40 @@ class Orchestrator:
                     res.errors.append(f"{spec.playbook_id}/{prompt_id}: {e}")
         return res
 
+    def triggers_only(self, feed: Path, only_account: Optional[str] = None) -> Dict[str, Any]:
+        """Score and evaluate triggers for every document without calling Claude. Used by the plugin's book-review skill."""
+        docs = [(src, d) for src, d in load_feed(feed) if not only_account or (d.get("account") or {}).get("account_id") == only_account]
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        rows: List[Dict[str, Any]] = []
+        for src, d in docs:
+            try:
+                prepared = self.prepare(d)
+            except Exception as e:
+                rows.append({"source": src, "account_id": (d.get("account") or {}).get("account_id"), "error": str(e)})
+                continue
+            fired = evaluate_triggers(prepared)
+            rows.append({
+                "account_id": prepared["account"]["account_id"], "account_name": prepared["account"]["name"],
+                "segment": prepared["account"]["segment"], "arr": prepared["contract"]["arr"],
+                "days_to_renewal": prepared["contract"]["days_to_renewal"],
+                "health": prepared["health"]["score"], "band": prepared["health"]["band"],
+                "health_30d_ago": prepared["health"].get("score_30d_ago"),
+                "champion_status": prepared["relationship"]["champion"]["status"], "ecri": prepared["sentiment"].get("ecri"),
+                "seat_utilization": prepared["usage"].get("seat_utilization"),
+                "fired": [{"playbook_id": s.playbook_id, "priority_rank": s.priority_rank, "reason": r, "prompt_chain": list(s.prompt_chain)} for s, r in fired],
+                "data_quality_flags": prepared.get("data_quality_flags", []),
+            })
+        priority_name = {0: "P0", 1: "P1", 2: "P2", 3: "P3"}
+        rows.sort(key=lambda r: (min((f["priority_rank"] for f in r.get("fired", [])), default=9), -(r.get("arr") or 0)))
+        summary = {
+            "run_date": self.today, "accounts": len(rows),
+            "by_band": {b: sum(1 for r in rows if r.get("band") == b) for b in ("green", "yellow", "red")},
+            "by_priority": {priority_name[p]: sum(1 for r in rows for f in r.get("fired", []) if f["priority_rank"] == p) for p in range(4)},
+            "accounts_detail": rows,
+        }
+        (self.out_dir / "triggers.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+        return summary
+
     def run(self, feed: Path, only_account: Optional[str] = None, only_playbook: Optional[str] = None, concurrency: int = 8) -> Dict[str, Any]:
         docs = [(src, d) for src, d in load_feed(feed) if not only_account or (d.get("account") or {}).get("account_id") == only_account]
         self.out_dir.mkdir(parents=True, exist_ok=True)
@@ -950,6 +996,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--playbook", default=None, help="Force a single playbook id (e.g. PB-CAD-01)")
     ap.add_argument("--dry-run", action="store_true", help="Write files only; never call adapters (also CSE_DRY_RUN=true)")
     ap.add_argument("--offline", action="store_true", help="No API calls; deterministic stub actions to exercise the pipeline")
+    ap.add_argument("--triggers-only", action="store_true", help="Score + evaluate triggers for every account and print the digest input; no Claude calls, no writes")
     ap.add_argument("--enrich", action="store_true", help="Push stale stakeholders to Clay (needs CLAY_WEBHOOK_URL)")
     ap.add_argument("--parse-transcripts", action="store_true", help="Parse pending transcripts into sentiment signals")
     ap.add_argument("--concurrency", type=int, default=int(os.environ.get("CSE_CONCURRENCY", "8")))
@@ -958,8 +1005,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    dry_run = args.dry_run or args.offline or os.environ.get("CSE_DRY_RUN", "true").lower() == "true"
-    orch = Orchestrator(Path(args.out), dry_run, args.offline, args.csm, args.today, enrich=args.enrich, parse_transcripts=args.parse_transcripts)
+    dry_run = args.dry_run or args.offline or args.triggers_only or os.environ.get("CSE_DRY_RUN", "true").lower() == "true"
+    orch = Orchestrator(Path(args.out), dry_run, args.offline or args.triggers_only, args.csm, args.today, enrich=args.enrich, parse_transcripts=args.parse_transcripts)
+    if args.triggers_only:
+        summary = orch.triggers_only(Path(args.input), args.account_id)
+        for r in summary["accounts_detail"]:
+            if "error" in r:
+                print(f"  ! {r.get('account_id')}: {r['error']}")
+                continue
+            fired = ", ".join(f"{f['playbook_id']} ({f['reason']})" for f in r["fired"]) or "none"
+            print(f"  {r['account_name']} · {r['segment']} · ${r['arr']:,.0f} · {r['days_to_renewal']}d · health {r['health']:.1f} {r['band'].upper()} · champion {r['champion_status']} · fired: {fired}")
+        print(json.dumps({k: v for k, v in summary.items() if k != "accounts_detail"}, indent=2))
+        print(f"details in {args.out}/triggers.json")
+        return 0
     summary = orch.run(Path(args.input), args.account_id, args.playbook, args.concurrency)
     print(json.dumps({k: v for k, v in summary.items() if k != "actions"}, indent=2))
     print(f"{len(summary['actions'])} action(s) written under {args.out}/ — see run_summary.json")

@@ -4,6 +4,27 @@ CS-Claude Engine is a five-layer system. Each layer has a single responsibility,
 
 ---
 
+## 0. Two runtimes, one engine
+
+The same prompts, schemas, scoring code, and playbook logic run in two environments:
+
+| | **Plugin mode** | **Server mode** |
+|---|---|---|
+| Runtime | Claude itself, inside a user's Claude account (app, Cowork, or Claude Code), with the repo installed as a plugin | A Python process (`src/orchestrator.py`) on a schedule, calling the Messages API |
+| L0 sources | The user's **connectors** (MCP tools for HubSpot/Salesforce, Zendesk, Gong/Zoom, Amplitude, Clay, Slack, Gmail, Drive…) as discovered by the `cs-setup` skill and recorded in the stack profile | ELT into a warehouse |
+| L1 transform | None persisted — the `customer-360` skill assembles the document in-session per `skills/customer-360/references/field-sources.md`; history is kept in `cs-engine/accounts/<id>/history/` in the user's working folder | dbt marts |
+| L2 assembly | The skill, writing `customer_360.json` and running `health_score.py` + `validate.py` as bundled scripts | The orchestrator |
+| L3 intelligence | Claude reasons directly from the prompt files, following the same `<analysis_steps>` and `<guardrails>`; outputs the same `PlaybookAction` schema | Messages API with forced `tool_use` |
+| L4 action | Proposed writes presented to the user; executed through the connectors only on approval, in-conversation | Adapters + approval queue |
+| L5 feedback | `history/actions.jsonl` per account | `action_outcomes` table |
+| Scheduling | A scheduled task in the user's Claude account running the `book-review` skill (digest only, no writes when unattended) | Airflow / cron |
+
+Plugin mode is how an individual CSM adopts the engine in an afternoon with zero infrastructure. Server mode is how CS Ops runs it across thousands of accounts with warehouse-grade history and an audit trail. Teams typically start in plugin mode and graduate the Customer 360 export to the warehouse once the field definitions have settled; the schema is identical, so nothing downstream changes.
+
+The sections below describe server mode in full; where plugin mode differs it is noted inline.
+
+---
+
 ## 1. Layer overview
 
 ```

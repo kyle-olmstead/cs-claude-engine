@@ -13,6 +13,53 @@ CS-Claude Engine is not a chatbot bolted onto a CRM. It is a closed loop:
 
 Every stage is typed, versioned, and testable. Claude never free-texts into a CRM field; it emits structured JSON against a schema the orchestrator validates before anything is written.
 
+The engine runs two ways from the same files:
+
+| Mode | Where it runs | Data comes from | Best for |
+|---|---|---|---|
+| **Plugin mode** | Inside your Claude account (Claude app, Cowork, or Claude Code) as an installed plugin | The connectors you already have — HubSpot/Salesforce, Zendesk, Gong/Zoom, Amplitude, Clay, Slack, Gmail, Drive… | A CSM or CS leader who wants the engine on their own book today, with no infrastructure |
+| **Server mode** | A scheduled Python job against your warehouse (`src/orchestrator.py` + dbt marts) | JSONL feeds exported from the marts | CS Ops running the whole customer base daily, with audit logs and CRM write-back |
+
+---
+
+## Install into your Claude account (plugin mode)
+
+The repository is itself a Claude plugin and a one-plugin marketplace. Nobody needs to clone it or set an API key; the plugin uses the connectors already authorized in your Claude account.
+
+**Claude app / Cowork (paid plans):** open *Customize → Plugins*, choose *Add marketplace*, enter `kyle-olmstead/cs-claude-engine`, then add the **cs-engine** plugin from that marketplace. (You can also upload the packaged `cs-engine.plugin` file from the Releases page as a custom plugin.)
+
+**Claude Code:**
+
+```
+/plugin marketplace add kyle-olmstead/cs-claude-engine
+/plugin install cs-engine@cs-engine
+```
+
+Then, in any conversation:
+
+```
+set up the CS engine
+```
+
+The `cs-setup` skill inventories your connectors, maps each to a category the engine needs (CRM, support desk, conversation intelligence, survey tool, product analytics or warehouse, billing, enrichment, chat, email, calendar, documents), confirms the mapping with you, saves it as your *stack profile*, and scores the bundled sample account to prove the install. From then on every skill reads that profile; a missing category is reported as a data-quality flag with its cost in confidence, never silently invented. Full category reference: [`CONNECTORS.md`](CONNECTORS.md). Field-by-field source map: [`skills/customer-360/references/field-sources.md`](skills/customer-360/references/field-sources.md).
+
+**Skills you get:**
+
+| Say… | Skill | What happens |
+|---|---|---|
+| "set up the CS engine", "what's connected" | `cs-setup` | Connector inventory → stack profile |
+| "how healthy is Contoso", "pull the 360 on Contoso" | `customer-360` | Schema-valid Customer 360 from your connectors + explained health score |
+| "review my book", "what's at risk", or on a schedule | `book-review` | Prioritized digest across your accounts, P0 first, with the playbook to run |
+| "Contoso just went red", "our champion left" | `red-account-turnaround` | Churn RCA → save plan → exec outreach draft (PB-RET-01) |
+| "prep the Contoso renewal" | `renewal-defense` | Scenarios, stakeholder asks, dated plan, kickoff draft (PB-RET-02) |
+| "Contoso is stuck in onboarding" | `ttv-acceleration` | Blocker diagnosis, owners, milestone date, check-in draft (PB-ADP-01) |
+| "what features is Contoso not using" | `feature-depth-audit` | Peer comparison, ranked recommendations, adoption narrative (PB-ADP-02) |
+| "where can we expand Contoso" | `expansion-whitespace` | Readiness gate, sized plays, sponsor, objections, sales handoff (PB-EXP-01/02) |
+| "prep the Contoso EBR" | `ebr-generator` | Narrative, slide script, ROI table, pre-work, pre-read email (PB-CAD-01) |
+| "what's our NRR by segment" | `retention-report` | NRR/GRR/churn decomposition, velocity, ARR per CSM, CRC, LTV:CAC, QBR velocity |
+
+Every skill ends the same way: it shows what it found with evidence paths, then asks which proposed writes you want — CRM property, task, Slack alert, email *draft*, document. Nothing reaches a customer or changes a CRM field until you say so.
+
 ---
 
 ## What it does
@@ -46,6 +93,17 @@ Each metric has a formal definition in [`docs/02_METRICS_TAXONOMY.md`](docs/02_M
 cs-claude-engine/
 ├── README.md                              ← you are here
 ├── requirements.txt
+├── .claude-plugin/
+│   ├── plugin.json                        ← plugin manifest (the repo root is the plugin)
+│   └── marketplace.json                   ← one-plugin marketplace so the repo can be added by owner/repo
+├── CONNECTORS.md                          ← tool categories (~~crm, ~~support desk, …) and what each unlocks
+├── skills/                                ← plugin mode: one skill per workflow, each driving the prompts below
+│   ├── cs-setup/                          ← connector inventory → stack profile
+│   ├── customer-360/                      ← assembles the 360 from connectors (+ references/field-sources.md, playbook-protocol.md)
+│   ├── book-review/                       ← digest across the book; schedulable
+│   ├── red-account-turnaround/ · renewal-defense/ · ttv-acceleration/
+│   ├── feature-depth-audit/ · expansion-whitespace/ · ebr-generator/
+│   └── retention-report/
 ├── config/
 │   └── health_weights.json                ← single source of truth for score weights (exported from dbt vars)
 ├── docs/
@@ -66,7 +124,8 @@ cs-claude-engine/
 │       ├── whitespace_expansion_finder.prompt ← tier/seat/module whitespace
 │       └── executive_ebr_generator.prompt     ← C-suite EBR script and deck outline
 ├── src/
-│   ├── orchestrator.py                    ← anthropic SDK orchestration: feeds → Claude → actions
+│   ├── orchestrator.py                    ← anthropic SDK orchestration: feeds → Claude → actions (+ --triggers-only, --offline)
+│   ├── validate.py                        ← schema + evidence-integrity + approval-floor validator (used by the skills)
 │   ├── models/
 │   │   ├── health_score.py                ← weighted health score with explainability
 │   │   └── metrics_calculator.py          ← NRR/GRR/churn/velocity/TTV/CRC/LTV:CAC/QBR velocity
@@ -89,7 +148,7 @@ cs-claude-engine/
 
 ---
 
-## Quickstart
+## Quickstart (server mode)
 
 ### Prerequisites
 
@@ -101,7 +160,7 @@ cs-claude-engine/
 ### Install
 
 ```bash
-git clone https://github.com/your-org/cs-claude-engine.git
+git clone https://github.com/kyle-olmstead/cs-claude-engine.git
 cd cs-claude-engine
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
