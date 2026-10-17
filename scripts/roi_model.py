@@ -66,6 +66,10 @@ class Assumptions:
         "Base: risk caught earlier": [0.005, 0.0],
         "Upside: earlier risk detection plus surfaced expansion": [0.01, 0.01],
     })
+    # one open seat (Part 8): how long the book is under-covered while a seat is open
+    open_seats: int = 1
+    time_to_fill_days: int = 50       # mid-level CS roles commonly take 45 to 60 days to fill
+    gap_months: float = 5.0           # time to fill plus the 90-day ramp at half productivity, rounded to the month
 
 
 def model(a: Assumptions) -> Dict:
@@ -110,6 +114,24 @@ def model(a: Assumptions) -> Dict:
         ebitda = ss + arr * a.gross_margin
         scen[name] = {"grr_change": grr, "expansion_change": nrr, "arr_effect": arr, "ebitda_effect": ebitda, "ebitda_margin_pts": ebitda / book * 100}
 
+    # Part 8: one open seat. The unit is a seat for a month, which is how the budget line reads.
+    seats = a.open_seats
+    unspent_month = steady / 12
+    unspent_gap = unspent_month * a.gap_months * seats
+    engine_gap = engine_once + engine_run * a.gap_months / 12
+    gap_risk = gap * seats
+    remaining_after_vacancy = a.team_size - seats
+    load_increase_vacancy = (a.team_size / remaining_after_vacancy) - 1 if remaining_after_vacancy > 0 else float("inf")
+    open_seat = {
+        "seats": seats, "gap_months": a.gap_months, "time_to_fill_days": a.time_to_fill_days,
+        "unspent_comp_per_month": unspent_month, "unspent_comp_over_gap": unspent_gap,
+        "vacancy_cost_per_departure": per_event, "coverage_gap_risk": gap_risk,
+        "engine_cost_over_gap": engine_gap, "engine_vs_coverage_risk": engine_gap / gap_risk if gap_risk else None,
+        "net_vs_plan": unspent_gap - engine_gap,
+        "remaining_csms": remaining_after_vacancy, "load_increase": load_increase_vacancy,
+        "hours_returned_share": saved_share, "cushion": saved_share - load_increase_vacancy,
+    }
+
     return {
         "per_csm": {"fica": fica, "k401": k401, "fringe": fringe, "fringe_pct_of_ote": fringe / a.ote, "steady_state_loaded": steady,
                     "recruit_per_event": recruit, "ramp_per_event": ramp, "coverage_gap_per_event": gap, "turnover_event_total": per_event,
@@ -122,6 +144,7 @@ def model(a: Assumptions) -> Dict:
         "capacity": {"book_increase_needed": book_increase, "hours_saved": saved, "hours_saved_total": saved_total, "share_of_productive_hours": saved_share,
                      "margin_vs_needed": saved_share - book_increase},
         "retention": {"breakeven_grr_lift": breakeven_grr, "scenarios": scen},
+        "open_seat": open_seat,
     }
 
 
@@ -147,6 +170,14 @@ def print_report(a: Assumptions, m: Dict) -> None:
     print(f"  Break-even: {r['breakeven_grr_lift']:.3%} of gross retention = one {fmt(e['run_rate'])} renewal a year")
     for name, s in r["scenarios"].items():
         print(f"  {name:58} GRR {s['grr_change']:+.1%}  exp {s['expansion_change']:+.1%}  ARR {s['arr_effect']:+,.0f}  EBITDA {s['ebitda_effect']:+,.0f} ({s['ebitda_margin_pts']:+.2f} pts)")
+    o = m["open_seat"]
+    print()
+    print(f"ONE OPEN SEAT (Part 8)" if o["seats"] == 1 else f"{o['seats']} OPEN SEATS (Part 8)")
+    print(f"  Unspent comp while the seat is open   {fmt(o['unspent_comp_per_month'])} / month / seat; {fmt(o['unspent_comp_over_gap'])} over a {o['gap_months']:.0f}-month gap")
+    print(f"  Cost of the vacancy                   {fmt(o['vacancy_cost_per_departure'])} per departure; coverage-gap risk {fmt(o['coverage_gap_risk'])}")
+    print(f"  Engine over the gap                   {fmt(o['engine_cost_over_gap'])} (setup + {o['gap_months']:.0f} months of run cost) = {o['engine_vs_coverage_risk']:.2f}x the coverage-gap risk")
+    print(f"  Net against plan while covered        {fmt(o['net_vs_plan'])} under budget")
+    print(f"  The team that stayed                  {o['remaining_csms']} CSMs take +{o['load_increase']:.0%} each; engine returns ~{o['hours_returned_share']:.0%} of hours; cushion {o['cushion']:+.0%}")
 
 
 def main(argv=None) -> int:

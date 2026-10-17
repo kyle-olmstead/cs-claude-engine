@@ -98,6 +98,8 @@ The alternative this engine makes possible is to not backfill. Spread their acco
 
 On a $30 million revenue base that is about one point of operating margin before counting any improvement in retention. The engine pays for itself if it saves one $13,400 renewal a year, and the case stays positive even if bigger books cost half a point of retention.
 
+The more common situation is smaller: one seat opens, and the book has to be covered for the five months it takes to hire and ramp a replacement. Per seat, the engine costs about **$16,600** over that gap against **$69,000** of salary that isn't being spent, so the team finishes about **$52,600 under plan** while every orphaned account is still reviewed each morning. The memo's Part 8 walks through it.
+
 These are modeled figures, not customer results, and the engine has not yet run in a production deployment. The full memo explains every number in plain English, names what could go wrong, separates what is verified from what you should test yourself, and ships with the calculator so you can rerun it with your own figures: [`docs/04_ROI_MEMO.md`](docs/04_ROI_MEMO.md).
 
 ---

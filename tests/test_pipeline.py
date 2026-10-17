@@ -187,3 +187,20 @@ def test_validate_cli_repairs_floors(tmp_path):
                          capture_output=True, text=True)
     assert out.returncode == 1 and "requires_human_approval → true" in out.stdout
     assert json.loads(f.read_text())["communications"][0]["requires_human_approval"] is True
+
+
+def test_roi_model_reproduces_the_memo():
+    from scripts.roi_model import Assumptions, model
+    m = model(Assumptions())
+    assert round(m["per_csm"]["steady_state_loaded"]) == 165_978
+    assert round(m["option_b_engine"]["year_1_net"]) == 272_170
+    assert round(m["option_b_engine"]["steady_state_net"]) == 318_555
+    o = m["open_seat"]                                   # Part 8: one open seat
+    assert round(o["unspent_comp_per_month"]) == 13_831
+    assert round(o["vacancy_cost_per_departure"]) == 73_463
+    assert round(o["engine_cost_over_gap"]) == 16_583
+    assert round(o["net_vs_plan"]) == 52_574
+    assert 0.54 < o["engine_vs_coverage_risk"] < 0.56
+    two = model(Assumptions(open_seats=2))["open_seat"]
+    assert round(two["unspent_comp_over_gap"]) == 2 * round(o["unspent_comp_over_gap"]) or abs(two["unspent_comp_over_gap"] - 2 * o["unspent_comp_over_gap"]) < 1e-6
+    assert two["engine_cost_over_gap"] == o["engine_cost_over_gap"]   # the engine does not cost more for a second seat

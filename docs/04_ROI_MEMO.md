@@ -30,6 +30,8 @@ This memo answers the question a CEO or CFO will ask next: *what is that worth?*
 
 For a company with $30 million in annual recurring revenue, that is about **1.1 points of operating margin** before counting any improvement in retention. The engine has to save **one $13,400 renewal a year** to pay for itself.
 
+If your situation is the more common one, a single seat that just opened rather than two underperformers, Part 8 does the same arithmetic per seat: the engine costs about $16,600 over a five-month gap against $69,000 of salary you are not spending, so you finish about **$52,600 under plan** while the book stays covered.
+
 The rest of this memo shows where those numbers come from, what has to be true for them to hold, and what could go wrong.
 
 ---
@@ -218,6 +220,33 @@ This engine has **not** been run in a production deployment yet. Anyone who tell
 
 ---
 
+## Part 8. The common case: one open seat
+
+Parts 2 through 4 describe a decision: two people are not working out, and you choose not to replace them. Most CS leaders meet this engine in a smaller and far more frequent situation. One seat opens. Someone resigns, gets promoted, or goes on leave. The accounts they owned still have to be covered while you find and ramp the replacement, and the people covering them already had full days. At the 20 percent turnover rate used in Part 1, a ten-person team has one of these roughly twice a year.
+
+The arithmetic for one seat uses the same numbers as the rest of this memo, in a smaller unit: **one seat for one month**, because that is how the budget line reads. Finance calls the salary that goes unspent while a seat is open "vacancy savings." Customer Success calls the same period a coverage gap.
+
+**What the gap costs.** From Part 1, a departure costs $73,463 before the replacement is productive: $23,000 to recruit, $20,463 of reduced output while the new person ramps, and $30,000 of revenue put at risk because nobody fully owned the book for a while. From the day the seat opens to the day the hire is ramped is typically about five months: 45 to 60 days to fill, then 90 days at half productivity.
+
+**What the engine does during the gap.** The same three things it does every day, pointed at the accounts that lost their owner. It spreads them across the remaining team. It gives each covering CSM the account's full record so they are not starting cold. And it reviews every one of those accounts every morning and says which ones need a human today, so an account cannot quietly go dark for six weeks because it belonged to someone who left.
+
+**The numbers, per seat.**
+
+| | One open seat, five months |
+|---|---|
+| Salary not being spent while the seat is open | $13,831 a month, $69,157 over the gap |
+| Revenue at risk in the model while the book is under-covered | $30,000 |
+| Engine over the same five months (setup plus five months of run cost) | $16,583 |
+| Engine cost as a share of the revenue at risk | 0.55 |
+| **Net against plan while the book stays covered** | **$52,574 under budget** |
+| The nine people who stayed | each takes 11 percent more book; the engine returns about 30 percent of their hours |
+
+Two seats open at once doubles the salary and risk lines; the engine line does not double, because the setup is paid once and the run cost is the same. If the engine was already installed before the seat opened, the setup is already paid and the gap costs about five months of run cost, roughly $5,600.
+
+**The honest line.** The only modeled hard-dollar figure the engine directly addresses here is the $30,000 of revenue at risk, and the engine costs about half of that over the gap. The rest of the one-seat case is the budget line, which is four times the engine's cost and already approved, and the hours returned to the people absorbing the book. The ramp of the new hire should shorten when they inherit a maintained record instead of a cold CRM, but no number for that belongs in this memo until someone measures it (Part 7 says how).
+
+---
+
 ## Run it with your numbers
 
 Every figure in this memo comes from one short program. Change any assumption:
@@ -225,6 +254,7 @@ Every figure in this memo comes from one short program. Change any assumption:
 ```
 python3 scripts/roi_model.py
 python3 scripts/roi_model.py --base 125000 --ote 150000 --turnover 0.25 --arr-per-csm 4000000
+python3 scripts/roi_model.py --open-seats 2 --gap-months 4        # Part 8 with your own gap
 python3 scripts/roi_model.py --json
 ```
 
@@ -238,6 +268,7 @@ python3 scripts/roi_model.py --json
 | Profit on retained revenue | 80 percent | 70 to 85 percent | converts revenue to profit |
 | Time returned per CSM | 30 percent | 20 to 40 percent | below 25, backfill one seat |
 | Claude seat price | $30 per month | your plan | a few thousand dollars |
+| Length of an open-seat gap (Part 8) | 5 months | 3 to 7 months | about $13,800 of unspent salary and $1,100 of engine cost per month |
 
 ---
 
