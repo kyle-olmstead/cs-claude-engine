@@ -3,7 +3,7 @@
 **An AI teammate for Customer Success that works inside the tools you already use.**
 
 **If you read nothing else:**
-- It connects to your CRM and the other tools your team already has, and tells you which customers are about to leave, which are ready to buy more, and what to do about each one — with the plan and the first email already drafted.
+- It connects to your CRM and the other tools your team already has, and tells you which customers are about to leave, which are ready to buy more, and what to do about each one, with the plan and the first email already drafted.
 - It never contacts a customer or changes a record without a person approving it.
 - It's free, open source, and a CSM can install it in about ten minutes. A sample account is included so you can watch it work before connecting anything.
 
@@ -44,22 +44,22 @@ A few words used throughout: a **CSM** is a Customer Success Manager, the person
 
 ## 1. The problem it solves
 
-A CSM typically looks after 30 to 300 accounts. The warning signs that a customer is drifting — logins dropping, the champion leaving, a support ticket aging, a lukewarm survey answer — are spread across five or six systems. Nobody has time to check all of them for every account.
+A CSM typically looks after 30 to 300 accounts. The warning signs that a customer is drifting (logins dropping, the champion leaving, a support ticket aging, a lukewarm survey answer) are spread across five or six systems. Nobody has time to check all of them for every account.
 
 So problems get noticed late, usually in the renewal conversation, when the options are already bad. Meanwhile, customers quietly outgrowing their plan go unnoticed too.
 
-This engine does the checking — every day if you schedule it, or whenever you ask.
+This engine does the checking: every day if you schedule it, or whenever you ask.
 
 ---
 
 ## 2. What it does, in plain English
 
-1. **Watches every account for trouble.** Each account gets a health score (green / yellow / red) built from usage, support, sentiment, relationships, and contract facts. The score always comes with its explanation — which factor moved it and by how much — never a mystery number.
+1. **Watches every account for trouble.** Each account gets a health score (green / yellow / red) built from usage, support, sentiment, relationships, and contract facts. The score always comes with its explanation, which factor moved it and by how much, never a mystery number.
 2. **Explains why, not just what.** When an account turns red, the engine works out the cause (lost champion, incomplete onboarding, reliability problems, doubt about value, a competitor…) and names the single action most likely to fix it.
-3. **Writes the plan.** A renewal plan with scenarios, who to talk to, what to ask, and dates — plus a draft of the first email for you to edit and send, or not.
+3. **Writes the plan.** A renewal plan with scenarios, who to talk to, what to ask, and dates, plus a draft of the first email for you to edit and send, or not.
 4. **Finds growth.** Accounts using more than they bought, teams hitting feature limits, departments never offered the product. Sized against your price book, with the likely sponsor and the objection to expect.
 5. **Preps your business reviews.** A one-page executive narrative, a slide-by-slide script, an ROI table where every number shows its source, and the pre-read email.
-6. **Reports the numbers.** Net and gross revenue retention, logo vs. dollar churn, expansion pipeline, revenue per CSM — with the formulas written down so the numbers can be defended.
+6. **Reports the numbers.** Net and gross revenue retention, logo vs. dollar churn, expansion pipeline, revenue per CSM, with the formulas written down so the numbers can be defended.
 
 **What it will never do:** email a customer · change a CRM record without your approval · state a number it can't trace to your data · propose a discount or a contract term.
 
@@ -80,7 +80,7 @@ This engine does the checking — every day if you schedule it, or whenever you 
                         5. Only then: creates the CRM task, posts the alert, saves the email draft
 ```
 
-Every recommendation carries its evidence — the exact fields in your data it was based on. If the engine can't find the data, it says so and lowers its confidence instead of guessing.
+Every recommendation carries its evidence: the exact fields in your data it was based on. If the engine can't find the data, it says so and lowers its confidence instead of guessing.
 
 ---
 
@@ -169,9 +169,9 @@ If you'll let the engine write back to the CRM (it asks first, every time), crea
 | "prep the Contoso business review" | Narrative, slide script, ROI table, pre-read email |
 | "what's our net revenue retention?" | Retention and efficiency metrics with the formulas shown |
 
-*"Contoso" stands for any account name in your CRM — say whatever your customer is called. The engine looks the name up in your CRM, asks if more than one record matches, and tells you if none does.*
+*"Contoso" stands for any account name in your CRM; say whatever your customer is called. The engine looks the name up in your CRM, asks if more than one record matches, and tells you if none does.*
 
-Every one ends the same way: it shows what it found and asks which actions you want — a CRM task, a Slack alert, an email *draft*, a saved document. Nothing happens until you say yes. A full sample conversation is in [`examples/demo_conversation.md`](examples/demo_conversation.md).
+Every one ends the same way: it shows what it found and asks which actions you want: a CRM task, a Slack alert, an email *draft*, a saved document. Nothing happens until you say yes. A full sample conversation is in [`examples/demo_conversation.md`](examples/demo_conversation.md).
 
 ---
 
@@ -197,7 +197,7 @@ A team that only does the weekly 20 minutes gets most of the value. A team that 
 
 Contoso Logistics, a $240,000-a-year enterprise customer, 95 days from renewal. Health dropped from 79 to 60 in a month.
 
-The engine notices that the champion's enrichment data now shows a different employer, that product usage is actually fine (the Finance team is active daily), and that only two people at Contoso talk to us. Its diagnosis: this is not a product problem; it is an *ownership vacuum* — nobody at Contoso owns the renewal anymore. Its plan: ask the executive sponsor to name a successor within a week, add two more contacts in the champion's department, and run a business review before day 60. It drafts a 140-word note to the sponsor asking for 30 minutes and a name, and lists the seven data points it relied on.
+The engine notices that the champion's enrichment data now shows a different employer, that product usage is actually fine (the Finance team is active daily), and that only two people at Contoso talk to us. Its diagnosis: this is not a product problem; it is an *ownership vacuum*: nobody at Contoso owns the renewal anymore. Its plan: ask the executive sponsor to name a successor within a week, add two more contacts in the champion's department, and run a business review before day 60. It drafts a 140-word note to the sponsor asking for 30 minutes and a name, and lists the seven data points it relied on.
 
 The CSM edits one sentence, sends it, and the next conversation starts from the cause instead of the symptom.
 
@@ -215,7 +215,7 @@ The CSM edits one sentence, sends it, and the next conversation starts from the 
 
 ## 11. For bigger teams: server mode
 
-The same engine can run as a scheduled job against your data warehouse — every account, every night, with history and an audit log — writing back to the CRM through the same approval rules. It ships with the warehouse models (dbt), the scoring code, and the orchestration script. This path needs an engineer and takes one to two weeks: [`docs/00_SERVER_QUICKSTART.md`](docs/00_SERVER_QUICKSTART.md).
+The same engine can run as a scheduled job against your data warehouse (every account, every night, with history and an audit log), writing back to the CRM through the same approval rules. It ships with the warehouse models (dbt), the scoring code, and the orchestration script. This path needs an engineer and takes one to two weeks: [`docs/00_SERVER_QUICKSTART.md`](docs/00_SERVER_QUICKSTART.md).
 
 ---
 
@@ -223,9 +223,9 @@ The same engine can run as a scheduled job against your data warehouse — every
 
 ```
 cs-claude-engine/
-├── skills/        10 plugin skills — what runs when you talk to it
-├── prompts/       8 versioned prompts — how the engine reasons (guardrails built in)
-├── src/           Python — health score, retention math, orchestrator, validator, CRM/enrichment/transcript tools
+├── skills/        10 plugin skills: what runs when you talk to it
+├── prompts/       8 versioned prompts: how the engine reasons (guardrails built in)
+├── src/           Python: health score, retention math, orchestrator, validator, CRM/enrichment/transcript tools
 ├── src/schemas/   The two contracts: customer_360.json (input) and playbook_action.json (output)
 ├── dbt/           A runnable dbt project: sources, 14 staging models, the two marts, tests, and seeds that build on your laptop
 ├── scripts/       Seed generator, SQL↔Python parity check, weight sync, ROI calculator
@@ -244,16 +244,16 @@ Every technical document opens with a plain-English summary so you can stop read
 
 | Term | Meaning |
 |---|---|
-| **CSM** | Customer Success Manager — responsible for keeping customers happy and renewing |
+| **CSM** | Customer Success Manager, responsible for keeping customers happy and renewing |
 | **Book** | The accounts one CSM looks after |
 | **Health score** | A 0–100 estimate of how likely an account is to stay and grow |
 | **Champion** | Your main internal advocate inside the customer's company |
 | **Executive sponsor** | The senior person on the customer side who backed the purchase |
 | **Churn** | Customers (or revenue) that leave |
-| **NRR / GRR** | Net / gross revenue retention — how much of last year's revenue from existing customers you still have, with and without growth counted |
-| **EBR / QBR** | Executive / quarterly business review — the periodic meeting where you show the customer what they got |
+| **NRR / GRR** | Net / gross revenue retention: how much of last year's revenue from existing customers you still have, with and without growth counted |
+| **EBR / QBR** | Executive / quarterly business review: the periodic meeting where you show the customer what they got |
 | **Customer 360** | The single data picture of an account the engine builds before deciding anything |
-| **Playbook** | "When X happens, do Y" — the engine's repeatable responses to specific situations |
+| **Playbook** | "When X happens, do Y": the engine's repeatable responses to specific situations |
 
 ---
 
@@ -269,7 +269,7 @@ Every technical document opens with a plain-English summary so you can stop read
 
 **Will it ever email my customers?** No. There is no send path. It writes drafts for you.
 
-**Is the health score accurate?** It's a well-reasoned default. Validate it against your own churn after one quarter (§6) — that's true of every health score ever built.
+**Is the health score accurate?** It's a well-reasoned default. Validate it against your own churn after one quarter (§6); that's true of every health score ever built.
 
 **What does it cost?** The software is free (Apache 2.0). You need a paid Claude plan.
 
@@ -277,4 +277,4 @@ Every technical document opens with a plain-English summary so you can stop read
 
 ## License
 
-Apache 2.0 — use it, change it, ship it. Improvements to the prompts and playbooks are the most valuable pull requests.
+Apache 2.0: use it, change it, ship it. Improvements to the prompts and playbooks are the most valuable pull requests.
