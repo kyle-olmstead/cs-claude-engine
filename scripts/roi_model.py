@@ -22,7 +22,7 @@ from typing import Dict, List
 class Assumptions:
     # team and book
     team_size: int = 10
-    underperformers: int = 2
+    underperformers: int = 1          # the memo's unit is one person; pass --underperformers 2 for two
     arr_per_csm: float = 3_000_000
     productive_hours: int = 1_800
     gross_margin: float = 0.80
@@ -114,7 +114,7 @@ def model(a: Assumptions) -> Dict:
         ebitda = ss + arr * a.gross_margin
         scen[name] = {"grr_change": grr, "expansion_change": nrr, "arr_effect": arr, "ebitda_effect": ebitda, "ebitda_margin_pts": ebitda / book * 100}
 
-    # Part 8: one open seat. The unit is a seat for a month, which is how the budget line reads.
+    # Memo Part 3: one open seat. The unit is a seat for a month, which is how the budget line reads.
     seats = a.open_seats
     unspent_month = steady / 12
     unspent_gap = unspent_month * a.gap_months * seats
@@ -142,7 +142,11 @@ def model(a: Assumptions) -> Dict:
         "engine": {"run_rate": engine_run, "one_time": engine_once, "seats": a.seats * a.seat_price_month * 12, "api": a.api_annual, "csops": a.csops_annual},
         "option_b_engine": {"year_1_net": y1, "steady_state_net": ss, "steady_state_net_turnover_adjusted": ss_adj, "severance": severance},
         "capacity": {"book_increase_needed": book_increase, "hours_saved": saved, "hours_saved_total": saved_total, "share_of_productive_hours": saved_share,
-                     "margin_vs_needed": saved_share - book_increase},
+                     "margin_vs_needed": saved_share - book_increase,
+                     # what the returned hours cost the company today (Part 2 of the memo)
+                     "hourly_loaded": steady / a.productive_hours, "hours_value": saved_total * steady / a.productive_hours,
+                     "engine_per_csm_year": engine_run / a.team_size, "engine_per_csm_once": engine_once / a.team_size,
+                     "value_multiple": (saved_total * steady / a.productive_hours) / (engine_run / a.team_size)},
         "retention": {"breakeven_grr_lift": breakeven_grr, "scenarios": scen},
         "open_seat": open_seat,
     }
@@ -158,11 +162,14 @@ def print_report(a: Assumptions, m: Dict) -> None:
     print(f"  OTE {fmt(a.ote)} + fringe {fmt(p['fringe'])} ({p['fringe_pct_of_ote']:.1%}) + tech {fmt(a.tech_stack)} + equipment {fmt(a.equipment)}")
     print(f"  = {fmt(p['steady_state_loaded'])} steady state; {fmt(p['turnover_adjusted_loaded'])} with turnover ({a.turnover:.0%}/yr, {fmt(p['turnover_event_total'])} per departure)")
     print(f"  Team of {a.team_size}: {fmt(t['steady_state'])} / {fmt(t['turnover_adjusted'])}; book {fmt(t['book_arr'])}\n")
-    print(f"CARRYING {a.underperformers} UNDERPERFORMERS")
+    print("WHAT THE ENGINE GIVES BACK TO ONE CSM (memo Part 2)")
+    print(f"  {c['hours_saved_total']:.0f} h/yr = {c['share_of_productive_hours']:.0%} of {a.productive_hours} h; worth {fmt(c['hours_value'])} at {fmt(c['hourly_loaded'])}/h loaded")
+    print(f"  Engine per CSM: {fmt(c['engine_per_csm_year'])}/yr + {fmt(c['engine_per_csm_once'])} once; returned time is {c['value_multiple']:.0f}x the annual cost\n")
+    print(f"RUNNING WITH {a.underperformers} FEWER SEAT{'S' if a.underperformers != 1 else ''} (memo Part 5)")
     print(f"  Direct {fmt(u['direct_cost'])}/yr ({fmt(u['direct_cost_turnover_adjusted'])} turnover-adjusted); revenue drag {fmt(u['revenue_drag_arr'])} ARR/yr on {fmt(u['book'])}\n")
-    print("OPTION A: REPLACE THEM")
+    print("  OPTION A: REPLACE")
     print(f"  One-time {fmt(A['one_time_total'])} ({', '.join(f'{k} {fmt(v)}' for k, v in A['one_time'].items())}); ongoing {fmt(A['ongoing'])}/yr\n")
-    print("OPTION B: DON'T BACKFILL, GIVE THE OTHERS THE ENGINE")
+    print("  OPTION B: DON'T BACKFILL, GIVE THE OTHERS THE ENGINE")
     print(f"  Engine {fmt(e['run_rate'])}/yr (+{fmt(e['one_time'])} once); severance {fmt(B['severance'])}")
     print(f"  Year 1 net {fmt(B['year_1_net'])}; steady state {fmt(B['steady_state_net'])}/yr ({fmt(B['steady_state_net_turnover_adjusted'])} turnover-adjusted)")
     print(f"  Capacity: each remaining CSM takes +{c['book_increase_needed']:.0%}; engine returns {c['hours_saved_total']:.0f} h = {c['share_of_productive_hours']:.0%} of {a.productive_hours} h (margin {c['margin_vs_needed']:+.0%})\n")
@@ -172,7 +179,7 @@ def print_report(a: Assumptions, m: Dict) -> None:
         print(f"  {name:58} GRR {s['grr_change']:+.1%}  exp {s['expansion_change']:+.1%}  ARR {s['arr_effect']:+,.0f}  EBITDA {s['ebitda_effect']:+,.0f} ({s['ebitda_margin_pts']:+.2f} pts)")
     o = m["open_seat"]
     print()
-    print(f"ONE OPEN SEAT (Part 8)" if o["seats"] == 1 else f"{o['seats']} OPEN SEATS (Part 8)")
+    print(f"ONE OPEN SEAT (memo Part 3)" if o["seats"] == 1 else f"{o['seats']} OPEN SEATS (memo Part 3)")
     print(f"  Unspent comp while the seat is open   {fmt(o['unspent_comp_per_month'])} / month / seat; {fmt(o['unspent_comp_over_gap'])} over a {o['gap_months']:.0f}-month gap")
     print(f"  Cost of the vacancy                   {fmt(o['vacancy_cost_per_departure'])} per departure; coverage-gap risk {fmt(o['coverage_gap_risk'])}")
     print(f"  Engine over the gap                   {fmt(o['engine_cost_over_gap'])} (setup + {o['gap_months']:.0f} months of run cost) = {o['engine_vs_coverage_risk']:.2f}x the coverage-gap risk")

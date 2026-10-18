@@ -86,19 +86,21 @@ Every recommendation carries its evidence — the exact fields in your data it w
 
 ## 4. What it's worth
 
-A ten-person Customer Success team costs about **$1.66 million a year** fully loaded, or **$1.81 million** once you price in the people who leave. When two of the ten aren't working out, the usual fix is to replace them: about **$182,000** in year one to end up where you started.
+Start with one person. A Customer Success Manager costs about **$165,978 a year** fully loaded, which is about **$92 an hour** of productive time. The engine takes over the reading and the first drafts for the work that eats a CSM's week (business-review prep, the weekly account review, renewal planning, red-account diagnosis, CRM upkeep), and in the model that returns **546 hours a year, about 30 percent of a working year**.
 
-The alternative this engine makes possible is to not backfill. Spread their accounts across the eight who are performing, and give those eight the engine so the extra load is absorbed by work the engine now does for them (business-review prep, weekly account triage, renewal planning, red-account diagnosis).
+| | One CSM, per year |
+|---|---|
+| Time the engine gives back | 546 hours (about 30 percent) |
+| What that time costs you today | $50,347 |
+| What the engine costs | $1,340 a year, plus $1,100 once |
 
-| | Year 1 | Every year after |
-|---|---|---|
-| Two seats you no longer fill | $331,955 avoided | $331,955 avoided |
-| Severance, setup, and the engine's run cost | ($59,785) | ($13,400) |
-| **Net effect on operating expense** | **+$272,170** | **+$318,555** |
+Those hours are time, not cash. The cash shows up in what a leader does with 30 percent of ten people's time, and the memo prices the three common answers:
 
-On a $30 million revenue base that is about one point of operating margin before counting any improvement in retention. The engine pays for itself if it saves one $13,400 renewal a year, and the case stays positive even if bigger books cost half a point of retention.
+- **Cover an open seat while you hire.** Per seat, the engine costs about **$16,600** over a five-month gap against **$69,000** of salary that isn't being spent, so the team finishes about **$52,600 under plan** while every orphaned account is still reviewed each morning.
+- **Grow without the next hire.** The same ten people absorb about **$3 million** of new revenue, one seat's worth, before anyone is added.
+- **Run with one fewer seat.** About **$152,600 a year** in expense removed, or half a point of operating margin on a $30 million book. A leadership decision; the engine makes it safe, not automatic.
 
-The more common situation is smaller: one seat opens, and the book has to be covered for the five months it takes to hire and ramp a replacement. Per seat, the engine costs about **$16,600** over that gap against **$69,000** of salary that isn't being spent, so the team finishes about **$52,600 under plan** while every orphaned account is still reviewed each morning. The memo's Part 8 walks through it.
+The engine pays for itself if it saves one $13,400 renewal a year, and the one-seat case stays positive even if bigger books cost half a point of retention.
 
 These are modeled figures, not customer results, and the engine has not yet run in a production deployment. The full memo explains every number in plain English, names what could go wrong, separates what is verified from what you should test yourself, and ships with the calculator so you can rerun it with your own figures: [`docs/04_ROI_MEMO.md`](docs/04_ROI_MEMO.md).
 

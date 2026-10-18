@@ -191,16 +191,26 @@ def test_validate_cli_repairs_floors(tmp_path):
 
 def test_roi_model_reproduces_the_memo():
     from scripts.roi_model import Assumptions, model
-    m = model(Assumptions())
+    m = model(Assumptions())                             # defaults: one CSM, one open seat, one seat not refilled
     assert round(m["per_csm"]["steady_state_loaded"]) == 165_978
-    assert round(m["option_b_engine"]["year_1_net"]) == 272_170
-    assert round(m["option_b_engine"]["steady_state_net"]) == 318_555
-    o = m["open_seat"]                                   # Part 8: one open seat
+    c = m["capacity"]                                    # Part 2: one CSM
+    assert round(c["hours_saved_total"]) == 546
+    assert abs(c["hourly_loaded"] - 92.21) < 0.01
+    assert abs(c["hours_value"] - 50_346.5) < 1
+    assert abs(c["engine_per_csm_year"] - 1_340) < 1e-6 and abs(c["engine_per_csm_once"] - 1_100) < 1e-6
+    assert 37 < c["value_multiple"] < 38
+    o = m["open_seat"]                                   # Part 3: one open seat
     assert round(o["unspent_comp_per_month"]) == 13_831
     assert round(o["vacancy_cost_per_departure"]) == 73_463
     assert round(o["engine_cost_over_gap"]) == 16_583
     assert round(o["net_vs_plan"]) == 52_574
     assert 0.54 < o["engine_vs_coverage_risk"] < 0.56
-    two = model(Assumptions(open_seats=2))["open_seat"]
-    assert round(two["unspent_comp_over_gap"]) == 2 * round(o["unspent_comp_over_gap"]) or abs(two["unspent_comp_over_gap"] - 2 * o["unspent_comp_over_gap"]) < 1e-6
-    assert two["engine_cost_over_gap"] == o["engine_cost_over_gap"]   # the engine does not cost more for a second seat
+    assert abs(m["option_b_engine"]["year_1_net"] - 123_885) < 1       # Part 5: one seat not refilled
+    assert abs(m["option_b_engine"]["steady_state_net"] - 152_577.5) < 1
+    assert round(m["option_a_replace"]["one_time_total"]) == 91_155
+    assert abs(m["capacity"]["book_increase_needed"] - 1 / 9) < 1e-9
+    two = model(Assumptions(underperformers=2))["option_b_engine"]     # the old two-of-ten case still reproduces
+    assert round(two["year_1_net"]) == 272_170 and round(two["steady_state_net"]) == 318_555
+    seats2 = model(Assumptions(open_seats=2))["open_seat"]
+    assert abs(seats2["unspent_comp_over_gap"] - 2 * o["unspent_comp_over_gap"]) < 1e-6
+    assert seats2["engine_cost_over_gap"] == o["engine_cost_over_gap"]   # the engine does not cost more for a second seat
