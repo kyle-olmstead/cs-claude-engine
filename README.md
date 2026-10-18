@@ -134,7 +134,21 @@ The engine is only as good as three things in your CRM. Thirty minutes here is w
 | **Accurate renewal dates and annual revenue on each account** | Every renewal and retention play keys off these | Company / account properties |
 | **Your price book** (or just list prices per seat and tier) | Expansion sizing uses placeholder prices until it has yours | A document, or your CRM's product library |
 
-If you'll let the engine write back to the CRM (it asks first, every time), create four custom text fields on the account: `cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`. Skip this and it still works — it just reports instead of writing.
+**What it works with.** The engine reads whatever connectors your Claude workspace already has, and `cs-setup` maps them to the roles it needs. Checked against Claude's connector directory on 2026-10-17:
+
+| Role | Built against | Connectors available today |
+|---|---|---|
+| CRM (required) | HubSpot, Salesforce | Pipedrive, Attio, Zoho CRM, Close |
+| CS platform (optional) | | Gainsight |
+| Support desk | | Intercom, Pylon, Zoho Desk, HubSpot Service Hub |
+| Calls | Zoom | Fireflies, Fathom, tl;dv |
+| Product analytics | | Amplitude, Mixpanel, Pendo, PostHog |
+| Warehouse | the dbt project | BigQuery, Snowflake, Databricks, dbt |
+| Billing, enrichment, chat, email, calendar, docs | Clay | Stripe, Chargebee, Apollo, ZoomInfo, Slack, Microsoft 365, Gmail, Google Calendar, Google Drive, Notion |
+
+Any custom connector your admin adds works the same way. Tools with no connector yet (Zendesk, Gong, Qualtrics, and most CS platforms other than Gainsight) are listed with three ways to bring their data in: [`CONNECTORS.md`](CONNECTORS.md).
+
+If you'll let the engine write back to the CRM (it asks first, every time), create four custom text fields on the account: `cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`. Skip this and it still works; it just reports instead of writing.
 
 **One honest note on the health score.** It ships with sensible default weights, and they are a starting point, not a verdict. After one quarter, check: did red accounts actually churn more than green ones? If not, the weights need adjusting to your business. The engine includes the method (`docs/02_METRICS_TAXONOMY.md`, section B1); it takes an afternoon.
 
@@ -249,7 +263,7 @@ Every technical document opens with a plain-English summary so you can stop read
 
 **I only have a CRM. Is that enough?** Yes. You'll get health scores and every playbook at reduced confidence, and the engine tells you which extra connection would help most.
 
-**Does it work with HubSpot? Salesforce? Zendesk? Gong?** It works with any tool that has a Claude connector — it's built around categories, not brands. See [`CONNECTORS.md`](CONNECTORS.md). If a tool you use has no connector yet, the engine works without it and says what it's missing.
+**Does it work with HubSpot? Salesforce? Zendesk? Gong?** HubSpot and Salesforce, yes; the repo is built against both. Zendesk and Gong have no Claude connector yet, so they are not plug-and-play; most teams bring their numbers in through the CRM, a warehouse export, or a custom connector, and [`CONNECTORS.md`](CONNECTORS.md) walks through all three. Everything with a connector in Claude's directory works through setup, because the engine is built around roles, not brands.
 
 **Can my whole team use it?** Yes. Each person installs it and runs setup once; everyone gets the same scoring and playbooks.
 

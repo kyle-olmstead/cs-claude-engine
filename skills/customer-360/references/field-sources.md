@@ -25,6 +25,7 @@ Conventions used below:
 - `conversations` — starts at line 166
 - `actions_last_30d` — starts at line 170
 - `benchmarks` — starts at line 174
+- `cs platform` (Gainsight) — at the end of the file
 
 ---
 
@@ -175,3 +176,21 @@ Engine-emitted actions: read `cs-engine/accounts/<id>/*.action.json` written in 
 ## `benchmarks`
 
 Segment defaults from `src/orchestrator.py::DEFAULT_BENCHMARKS` (also tabulated in `docs/02_METRICS_TAXONOMY.md` Part E). Override from `~~data warehouse` `mart_retention_nrr_grr` and the health mart's green-median when available.
+
+
+## `~~cs platform` (Gainsight CS)
+
+When the stack profile maps a CS platform, read it *after* the CRM and use it to fill or corroborate these fields. Standard Gainsight NXT object names are used below; field labels vary by instance, so confirm them with the admin during `cs-setup`. This is a mapping, not a tested integration.
+
+| Customer 360 field | Gainsight source | Notes |
+|---|---|---|
+| `health.mart_score` | Company → Scorecard overall score (0 to 100) | The engine's own score is computed separately; the drift between the two is reported in `health.drift_error`, never averaged. If the scorecard uses letters or colors, convert on the documented scale and flag `cs_platform_score_converted`. |
+| `actions_last_30d[]` | Cockpit → CTAs opened or updated in the last 30 days (`playbook_id` from the CTA type or reason, `status` open/closed, `emitted_at` from created date, `action_id` the CTA id) | Lets cooldowns respect work already in flight in the platform. |
+| `cadence.last_ebr_at`, `cadence.next_ebr_due_at` | Timeline → activities of type EBR/QBR; Success Plan objectives with a due date | Prefer the calendar connector if both exist. |
+| `relationship.stakeholders[]` (merge) | Company Person → role, title, last activity | Merge by email hash; CRM contact wins on conflict; add `source: gainsight` on rows only the platform knew about. |
+| `relationship.champion` | Company Person with the champion or sponsor role flag | Fill only if the CRM has no champion flag; flag `champion_from_cs_platform`. |
+| `lifecycle.stage` | Company → lifecycle stage (Onboarding, Adopting, Established, Renewing) | Map to the schema's enum; unknown values → `null` and flag `lifecycle_stage_unmapped`. |
+| `contract.arr`, `contract.renewal_date` | Company → ARR, Renewal Date | CRM wins on conflict; report a disagreement over 5 percent as `arr_source_disagreement`. |
+| `sentiment.latest_nps` | Survey responses synced to Gainsight, if the survey tool is not connected directly | Prefer the survey connector. |
+
+Never write to the platform from this skill. Playbook skills may *propose* a CTA or a timeline entry; it goes through the same approval question as any CRM write.

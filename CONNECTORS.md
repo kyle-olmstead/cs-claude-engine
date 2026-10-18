@@ -1,39 +1,67 @@
 # Connectors
 
-> **In plain English.** The engine doesn't care which brands you use. It thinks in roles — "the CRM," "the support desk," "the call recorder" — and this page shows how it maps whatever you have connected onto those roles, what each one unlocks, and what you lose when something's missing. Only the CRM is required.
+> **In plain English.** The engine doesn't care which brands you use. It thinks in roles ("the CRM," "the support desk," "the call recorder") and maps whatever you have connected in Claude onto those roles. Only the CRM is required. This page says which tools you can connect today, which ones the repo has been built against, and what to do when your tool isn't on the list.
 
 ## How tool references work
 
-Plugin files use `~~category` as a placeholder for whatever tool you have connected in that category. `~~crm` means HubSpot, Salesforce, Gainsight, or any other CRM with an MCP connector; `~~conversation intelligence` means Gong, Zoom, Chorus, Fireflies, or whatever records your customer calls.
+Plugin files use `~~category` as a placeholder for whatever tool you have connected in that category. `~~crm` means HubSpot, Salesforce, or any other CRM with a Claude connector; `~~conversation intelligence` means Zoom, Fireflies, or whatever records your customer calls.
 
-The engine is tool-agnostic by design. Every skill describes its workflow in terms of categories, and two mechanisms bind those categories to your real tools:
+Two mechanisms bind categories to real tools:
 
-1. **At install time** — the plugin customizer can rewrite `~~` placeholders to your product names so the skills read naturally in your environment.
-2. **At run time** — the `cs-setup` skill inventories the connectors actually present in your Claude account, assigns each to a category, saves the mapping as your *stack profile*, and every other skill reads that profile before touching data. If a category has no connector, the skill says so and tells you exactly which Customer 360 fields will be missing and what that costs in confidence — it never silently invents them.
+1. **At install time**, the plugin customizer can rewrite `~~` placeholders to your product names so the skills read naturally in your environment.
+2. **At run time**, the `cs-setup` skill inventories the connectors actually present in your Claude account (including custom connectors your admin added), assigns each to a category, saves the mapping as your *stack profile*, and every other skill reads that profile before touching data. If a category has no connector, the skill says so, sets the block's fields to `null`, and the health score leaves that component out rather than scoring it as 0 or 100 (`health.coverage` records how much of the score had inputs; below 60 percent the band is `insufficient_data`).
 
 Nothing in this plugin requires a specific vendor. Nothing requires an API key beyond the connectors you already authorized in Claude.
 
-## Connectors for this plugin
+## What "works with" means here
 
-| Category | Placeholder | Required? | What the engine reads from it | What the engine may write (always with your approval) | Common options |
-|---|---|---|---|---|---|
-| CRM | `~~crm` | **Yes** | Accounts/companies, contracts & ARR, contacts & titles, activities, opportunities (renewal/expansion), custom properties (champion flags, business outcomes, tech stack) | Account properties (`cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`), tasks, notes; never forecast or amount fields | HubSpot, Salesforce, Gainsight, Pipedrive, Attio, Zoho |
-| Support desk | `~~support desk` | Recommended | Open tickets with priority and age, 30/90-day volume, CSAT, first-response time, reopened tickets | Nothing by default; optional ticket tag on onboarding blockers | Zendesk, Intercom, Freshdesk, Help Scout, Jira Service Management |
-| Conversation intelligence | `~~conversation intelligence` | Recommended | Recent customer calls, transcripts, participants, dates | Nothing | Gong, Zoom, Chorus, Fireflies, Avoma, Microsoft Teams recordings |
-| Survey / NPS | `~~survey tool` | Optional | NPS and CSAT responses with verbatims, per contact, last 180 days | Nothing | Delighted, Qualtrics, SurveyMonkey, Typeform, in-CRM survey objects |
-| Product analytics | `~~product analytics` | Recommended | Daily/monthly active users per account, feature events, feature-gate hits, integrations connected, value milestones, seat activity | Nothing | Amplitude, Mixpanel, Pendo, Heap, PostHog, Segment |
-| Data warehouse | `~~data warehouse` | Optional (replaces product analytics + billing when present) | The dbt marts in `dbt/models/marts/`, or any table that exposes the Customer 360 fields | Nothing | Snowflake, BigQuery, Databricks, Postgres, Redshift |
-| Billing | `~~billing` | Optional (CRM ARR used when absent) | ARR/MRR by account, seats purchased, term dates, payment status, past-due days | Nothing | Stripe, Chargebee, Maxio, NetSuite, Recurly |
-| Enrichment | `~~enrichment` | Optional | Current employer and title for key contacts (champion-change detection), account tech stack | Nothing | Clay, Apollo, ZoomInfo, LinkedIn Sales Navigator, Clearbit |
-| Chat | `~~chat` | Optional | Internal channel context for an account (escalations, deal desk) | Alerts to a channel (P0/P1 only, with approval) | Slack, Microsoft Teams, Discord |
-| Email | `~~email` | Optional | Recent threads with account contacts (engagement recency, sentiment) | Drafts only — never sends | Gmail, Outlook |
-| Calendar | `~~calendar` | Optional | Upcoming EBRs/QBRs, last customer meeting | Proposed holds for value reviews and EBRs (with approval) | Google Calendar, Outlook Calendar |
-| Documents | `~~documents` | Optional | Prior EBR decks, account plans, kickoff notes, business-case docs | New artifacts (RCA, save plan, EBR script) as documents | Google Drive, SharePoint, Notion, Confluence, Claude docs |
+The engine can only read a tool that has a connector in your Claude workspace. So a tool is plug-and-play when all three are true: a Claude connector for it exists, your org has it enabled, and the connector exposes the records the field map needs. The tiers below are honest about which of those are known.
+
+- **Built against:** this repository has an explicit field map or adapter for it (`skills/customer-360/references/field-sources.md`, `src/tools/`).
+- **Connector available:** it appeared in Claude's connector directory when this page was checked. The mapping is generic; expect to confirm a field or two during `cs-setup`.
+- **No connector found:** not plug-and-play today. See "When your tool isn't here."
+
+*Directory checked on 2026-10-17 from one organization's view. The directory changes often, orgs can add custom connectors, and availability can differ by plan or region. Run `cs-setup` for the truth about your workspace.*
+
+## Connector matrix
+
+| Category | Placeholder | Required? | What the engine reads | What it may write (always with your approval) | Built against | Connector available | No connector found |
+|---|---|---|---|---|---|---|---|
+| CRM | `~~crm` | **Yes** | accounts, contracts and ARR, contacts and titles, activities, opportunities, custom properties | account properties (`cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`), tasks, notes; never forecast or amount fields | HubSpot, Salesforce | Pipedrive, Attio, Zoho CRM, Close, Nutshell, Clarify | Microsoft Dynamics |
+| CS platform | `~~cs platform` | No | the platform's health score (as `health.mart_score`, for comparison), timeline, CTAs and success plans (as `actions_last_30d`), relationships | nothing by default | | Gainsight (CS), Gainsight (Staircase AI) | Totango, ChurnZero, Vitally, Planhat, Custify, ClientSuccess, Catalyst, SmartKarrot, UserIQ, Natero, Strikedeck, Akkio, Hook, Churn360, Velaris, CustomerGauge, Preact |
+| Support desk | `~~support desk` | Recommended | open tickets with priority and age, 30/90-day volume, CSAT, first-response time | nothing by default | | Intercom, Pylon, Zoho Desk, Richpanel, Unthread; HubSpot Service Hub through the HubSpot connector; Jira Service Management through Atlassian | Zendesk, Freshdesk, Help Scout, Front |
+| Conversation intelligence | `~~conversation intelligence` | Recommended | recent customer calls, transcripts, participants | nothing | Zoom (connector and transcript parser), Gong (transcript parser for exported files; no connector) | Fireflies, Fathom, tl;dv, Vibe AI, Vylo; Attio call recordings; ZoomInfo lists a conversation-intelligence tool | Gong (connector), Chorus, Avoma |
+| Survey / NPS | `~~survey tool` | Optional | NPS and CSAT responses with verbatims, last 180 days | nothing | | SurveyMonkey, Jotform, Tally; in-CRM survey objects | Qualtrics, Delighted, Typeform |
+| Product analytics | `~~product analytics` | Recommended | active users per account, feature events, feature-gate hits, value milestones | nothing | | Amplitude, Mixpanel, Pendo, PostHog, Fullstory | Heap, Segment |
+| Data warehouse | `~~data warehouse` | Optional (replaces analytics and billing when present) | the dbt marts in `dbt/models/marts/`, or any table exposing the Customer 360 fields | nothing | DuckDB (CI), the dbt project | BigQuery, Databricks (Genie), Snowflake (Cortex-based, not raw SQL), dbt, Blaze SQL, Neon Postgres | Redshift |
+| Billing | `~~billing` | Optional (CRM ARR used when absent) | ARR/MRR, seats, term dates, payment status | nothing | | Stripe, Chargebee, NetSuite, ChartMogul, Tabs | Maxio, Recurly |
+| Enrichment | `~~enrichment` | Optional | current employer and title for key contacts (champion-change detection) | nothing | Clay (push and callback loop in `src/tools/`) | Apollo.io, ZoomInfo, Unify, Vibe Prospecting, Leadfeeder | Clearbit, LinkedIn Sales Navigator |
+| Chat | `~~chat` | Optional | internal channel context for an account | P0/P1 alerts to a channel, with approval | | Slack, Microsoft 365 (Teams) | Discord |
+| Email | `~~email` | Optional | recent threads with account contacts | drafts only; never sends | | Gmail, Microsoft 365 (Outlook) | |
+| Calendar | `~~calendar` | Optional | upcoming EBRs, last customer meeting | proposed holds, with approval | | Google Calendar, Microsoft 365, Calendly | |
+| Documents | `~~documents` | Optional | prior EBR decks, account plans, kickoff notes | new artifacts as documents | | Google Drive, Notion, Microsoft 365 (SharePoint, OneDrive), Box, Dropbox, Atlassian (Confluence), Glean, Claude docs | |
+| Tasks | `~~tasks` | Optional | open follow-ups per account | tasks, with approval | | Asana, Linear, Atlassian (Jira) | |
 
 ## Minimum viable setup
 
-`~~crm` alone is enough to run every skill in a reduced-confidence mode: health is scored on relationship, commercial, and whatever engagement/support data the CRM carries, and each action's `data_quality_flags[]` lists what was unavailable. Adding `~~product analytics` (or `~~data warehouse`) and `~~support desk` brings the health score to full fidelity. Adding `~~conversation intelligence` and `~~survey tool` unlocks the sentiment pillar and transcript-driven RCA.
+`~~crm` alone runs every skill in reduced-confidence mode: health is scored on relationship, commercial, and whatever engagement data the CRM carries; the unobserved components are left out; `health.coverage` is about 0.45 and the band is `insufficient_data`, which the digest and the playbooks treat as "unknown, not a signal." Adding `~~product analytics` (or `~~data warehouse`) and `~~support desk` brings the score to full fidelity. Adding `~~conversation intelligence` and `~~survey tool` unlocks the sentiment pillar and transcript-driven root-cause analysis.
+
+## If you already have a CS platform
+
+A CS platform (Gainsight, ChurnZero, Totango and the like) is a system of record with its own health score, CTAs, and playbooks. The engine does not replace it. Where the platform is connectable, the engine reads its score as an input and a second opinion (`health.mart_score`; the drift between the two is reported, never averaged), reads its timeline and CTAs as prior actions so cooldowns respect work already in flight, and writes nothing back without approval. Where it is not connectable, most deployments already sync the platform's score and CTAs into Salesforce or HubSpot fields; point the CRM field map at those and the engine reads them through `~~crm`.
+
+Gainsight is the one CS platform with Claude connectors today. The mapping from Gainsight objects to the Customer 360 is in `field-sources.md` under "CS platform." It is a mapping, not a tested integration; confirm object and field names with your Gainsight admin during `cs-setup`.
+
+## When your tool isn't here
+
+Three paths, in order of effort:
+
+1. **The CRM sync path.** Most tools without a connector already push their key numbers into the CRM (health scores, ticket counts, NPS, usage summaries land on company or contact properties). Tell `cs-setup` which properties those are and the engine reads them through `~~crm`. Zero engineering.
+2. **The warehouse path.** Export the tool's data to a warehouse the engine can read (BigQuery, Snowflake, Databricks, Postgres) and build the staging models in `dbt/models/staging/`. The marts do the rest. A day of CS Ops or analytics engineering per source.
+3. **The custom connector path.** Your admin adds a custom MCP connector for the tool's API to your Claude workspace. `cs-setup` detects custom connectors the same way it detects directory ones. Engineering work on your side, but the engine needs no change.
+
+Say which path you chose in the stack profile so the next person knows where a block comes from.
 
 ## How fields map to connectors
 
-The authoritative field-by-field source map — which Customer 360 field comes from which category, how to compute it when the connector only exposes raw records, and what to do when it is missing — is in `skills/customer-360/references/field-sources.md`.
+The authoritative field-by-field source map, including what to do when a block is missing, is `skills/customer-360/references/field-sources.md`.

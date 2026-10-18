@@ -29,18 +29,20 @@ Classify every server into one category from `${CLAUDE_PLUGIN_ROOT}/CONNECTORS.m
 
 | Category | Recognize by |
 |---|---|
-| `~~crm` | companies/accounts, contacts, deals/opportunities, properties, tasks (HubSpot, Salesforce, Gainsight, Pipedrive, Attio, Zoho) |
-| `~~support desk` | tickets, conversations, CSAT (Zendesk, Intercom, Freshdesk, Help Scout, Jira Service Management) |
-| `~~conversation intelligence` | calls, recordings, transcripts, meetings (Gong, Zoom, Chorus, Fireflies, Avoma) |
-| `~~survey tool` | NPS, CSAT surveys, responses (Delighted, Qualtrics, SurveyMonkey, Typeform) |
-| `~~product analytics` | events, active users, cohorts, feature usage (Amplitude, Mixpanel, Pendo, Heap, PostHog, Segment) |
-| `~~data warehouse` | SQL, tables, queries (Snowflake, BigQuery, Databricks, Postgres, Redshift) |
-| `~~billing` | subscriptions, invoices, MRR/ARR (Stripe, Chargebee, Maxio, NetSuite) |
-| `~~enrichment` | people/company enrichment, job changes, tech stack (Clay, Apollo, ZoomInfo, Clearbit) |
-| `~~chat` | channels, messages (Slack, Teams, Discord) |
-| `~~email` | mail search, threads, drafts (Gmail, Outlook) |
-| `~~calendar` | events, availability (Google Calendar, Outlook, Calendly) |
-| `~~documents` | files, docs, pages (Google Drive, SharePoint, Notion, Confluence, Claude docs) |
+| `~~crm` | companies/accounts, contacts, deals/opportunities, properties, tasks (HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM, Close) |
+| `~~cs platform` | a CS system of record's health score, timeline, CTAs, success plans (Gainsight; read as a second opinion and as prior actions, never written without approval) |
+| `~~support desk` | tickets, conversations, CSAT (Intercom, Pylon, Zoho Desk, HubSpot Service Hub, Jira Service Management) |
+| `~~conversation intelligence` | calls, recordings, transcripts, meetings (Zoom, Fireflies, Fathom, tl;dv) |
+| `~~survey tool` | NPS, CSAT surveys, responses (SurveyMonkey, Jotform, Tally, in-CRM survey objects) |
+| `~~product analytics` | events, active users, cohorts, feature usage (Amplitude, Mixpanel, Pendo, PostHog, Fullstory) |
+| `~~data warehouse` | SQL, tables, queries (BigQuery, Snowflake, Databricks, dbt, Postgres) |
+| `~~billing` | subscriptions, invoices, MRR/ARR (Stripe, Chargebee, NetSuite, ChartMogul) |
+| `~~enrichment` | people/company enrichment, job changes, tech stack (Clay, Apollo, ZoomInfo) |
+| `~~chat` | channels, messages (Slack, Microsoft 365 Teams) |
+| `~~email` | mail search, threads, drafts (Gmail, Microsoft 365 Outlook) |
+| `~~calendar` | events, availability (Google Calendar, Microsoft 365, Calendly) |
+| `~~documents` | files, docs, pages (Google Drive, Notion, Microsoft 365 SharePoint, Box, Dropbox, Confluence, Claude docs) |
+| `~~tasks` | follow-ups per account (Asana, Linear, Jira) |
 
 A server can fill more than one category (Zoom = conversation intelligence + calendar; HubSpot
 = CRM + survey + support when those hubs are in use). If two servers compete for one category,
@@ -55,7 +57,7 @@ one-word confirmation.
 
 For each **missing** category, say in one line what the engine loses without it, taken from the
 "Minimum viable setup" section of `CONNECTORS.md`. Do not block setup on missing optional
-categories. Block only if `~~crm` is missing — then explain that the CRM is the account spine
+categories, and name the path from `CONNECTORS.md` ("When your tool isn't here") when the user's tool has no connector. Block only if `~~crm` is missing — then explain that the CRM is the account spine
 and suggest connecting one before continuing.
 
 ## Step 3 — Capture the operator context
