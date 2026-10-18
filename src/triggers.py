@@ -14,7 +14,7 @@ from datetime import date
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from src.catalogs import DEFAULT_BENCHMARKS
-from src.validation import cooldown_active, get_path as _g
+from src.validation import cooldown_active, get_path as _g, parse_iso_date
 
 Predicate = Callable[[Dict[str, Any]], Optional[str]]
 
@@ -74,14 +74,11 @@ def trig_adp_02(c: Dict[str, Any]) -> Optional[str]:
 
 
 def trig_cad_01(c: Dict[str, Any]) -> Optional[str]:
-    due = _g(c, "cadence.next_ebr_due_at")
-    if due:
-        try:
-            days = (date.fromisoformat(due) - date.fromisoformat(c["as_of_date"])).days
-            if 0 <= days <= 30:
-                return f"EBR due in {days} days"
-        except ValueError:
-            pass
+    due, as_of = parse_iso_date(_g(c, "cadence.next_ebr_due_at")), parse_iso_date(c.get("as_of_date"))
+    if due and as_of:
+        days = (due - as_of).days
+        if 0 <= days <= 30:
+            return f"EBR due in {days} days"
     if _g(c, "contract.days_to_renewal", 999) <= 180 and _g(c, "cadence.ebrs_completed_last_2_quarters", 0) == 0 and _g(c, "cadence.ebr_cadence") != "none":
         return "renewal within 180 days and no EBR in two quarters"
     return None
@@ -164,7 +161,7 @@ class Fired:
 
 
 def evaluate_triggers(c360: Dict[str, Any], only: Optional[str] = None, today: Optional[date] = None) -> List[Fired]:
-    today = today or date.fromisoformat(c360.get("as_of_date", date.today().isoformat()))
+    today = today or parse_iso_date(c360.get("as_of_date")) or date.today()
     opt_out = set(_g(c360, "account.cse_opt_out_playbooks", []))
     fired: List[Fired] = []
     for spec in PLAYBOOKS:

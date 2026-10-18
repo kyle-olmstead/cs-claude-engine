@@ -83,6 +83,23 @@ def test_cooldown_marks_signal_update():
     assert cooldown_active("PB-RET-01", doc["actions_last_30d"], __import__("datetime").date(2026, 10, 30)) is None  # 20d > 14d window
 
 
+def test_cooldown_accepts_router_timestamps_and_fails_closed():
+    """E3 (audit P0-2): the router writes a full ISO datetime; the cooldown used to parse it as a date, swallow the error, and re-fire."""
+    from datetime import date
+    from src.validation import cooldown_active, parse_iso_date
+    assert parse_iso_date("2026-10-15") == date(2026, 10, 15)
+    assert parse_iso_date("2026-10-15T03:00:00+00:00") == date(2026, 10, 15)
+    assert parse_iso_date("2026-10-15T03:00:00Z") == date(2026, 10, 15)
+    assert parse_iso_date("") is None and parse_iso_date(None) is None and parse_iso_date("last tuesday") is None
+    hist = [{"playbook_id": "PB-RET-01", "status": "open", "emitted_at": "2026-10-15T03:00:00+00:00", "action_id": "cse:A:PB-RET-01:churn_risk_rca:2026-10-15"}]
+    assert cooldown_active("PB-RET-01", hist, date(2026, 10, 16)) == "cse:A:PB-RET-01:churn_risk_rca:2026-10-15"
+    assert cooldown_active("PB-RET-01", hist, date(2026, 11, 16)) is None            # outside the 14-day window
+    hist[0]["emitted_at"] = "not a date"
+    assert cooldown_active("PB-RET-01", hist, date(2026, 10, 16)) is not None         # unparseable → hold, never re-fire
+    hist[0]["status"] = "closed"
+    assert cooldown_active("PB-RET-01", hist, date(2026, 10, 16)) is None            # closed actions never block
+
+
 def test_registry_table_lists_every_playbook():
     table = registry_table()
     for p in PLAYBOOKS:

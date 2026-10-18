@@ -386,7 +386,13 @@ def parse_and_analyze_pending(c360: Dict[str, Any], offline: bool = False, inter
             conv["parsed"] = True
         except Exception as e:
             log.error("%s: transcript %s failed: %s", doc["account"]["account_id"], conv["call_id"], e)
-    customer_sents = [s["sentiment"] for s in signals if s.get("occurred_at") and (date.fromisoformat(doc["as_of_date"]) - date.fromisoformat(s["occurred_at"])).days <= 30]
+    from src.validation import parse_iso_date
+    as_of = parse_iso_date(doc.get("as_of_date"))
+    customer_sents = []
+    for s in signals:
+        occurred = parse_iso_date(s.get("occurred_at"))
+        if as_of and occurred and (as_of - occurred).days <= 30:
+            customer_sents.append(s["sentiment"])
     if customer_sents:
         doc["sentiment"]["transcript_sentiment_30d"] = round(sum(customer_sents) / len(customer_sents), 2)
     return doc

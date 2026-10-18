@@ -253,17 +253,16 @@ def detect_champion_change(stakeholder: Dict[str, Any], account_name: str, enric
 
 
 def stale_stakeholders(c360: Dict[str, Any], max_age_days: int = 30) -> List[Dict[str, Any]]:
-    as_of = date.fromisoformat(c360["as_of_date"])
+    from src.validation import parse_iso_date
+    as_of = parse_iso_date(c360.get("as_of_date")) or date.today()
     out = []
     for s in c360["relationship"]["stakeholders"]:
         enr = s.get("enrichment")
         if enr is None or enr.get("enrichment_stale"):
             out.append(s)
             continue
-        try:
-            age = (as_of - date.fromisoformat(enr["enriched_at"])).days
-        except Exception:
-            age = max_age_days + 1
+        enriched_at = parse_iso_date(enr.get("enriched_at"))
+        age = (as_of - enriched_at).days if enriched_at else max_age_days + 1
         if age > max_age_days and (s.get("is_champion") or s.get("is_exec_sponsor") or s.get("persona") == "economic_buyer"):
             out.append(s)
     return out

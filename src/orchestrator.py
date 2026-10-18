@@ -28,7 +28,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -158,7 +158,7 @@ class Orchestrator:
                  catalog_overrides: Optional[Dict[str, Any]] = None, enrich: bool = False, parse_transcripts: bool = False,
                  client: Any = None):
         self.out_dir = out_dir
-        self.today = today or date.today().isoformat()
+        self.today = today or datetime.now(timezone.utc).date().isoformat()   # UTC, same clock as provenance.emitted_at
         self.csm_name = csm_name
         self.registry = PromptRegistry(default_model=DEFAULT_MODEL)
         self.c360_schema = load_schema("customer_360.json")

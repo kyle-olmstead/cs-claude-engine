@@ -20,10 +20,33 @@ from __future__ import annotations
 
 import math
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import jsonschema
+
+
+def parse_iso_date(value: Any) -> Optional[date]:
+    """
+    Accept 'YYYY-MM-DD' or any ISO 8601 datetime (including a trailing 'Z') and return the date.
+    None when the value is empty or unparseable. Every place the engine turns an externally
+    supplied timestamp into a date goes through here, so the behavior is the same everywhere.
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    s = str(value).strip()
+    if not s:
+        return None
+    try:
+        if len(s) == 10:
+            return date.fromisoformat(s)
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
 
 _TOKEN = re.compile(r"([a-zA-Z_][a-zA-Z0-9_]*)|\[(\d+)\]")
 
@@ -212,14 +235,20 @@ def validate_action(action: Dict[str, Any], c360: Dict[str, Any], schema: Dict[s
 
 
 def cooldown_active(playbook_id: str, actions_last_30d: List[Dict[str, Any]], today: date) -> Optional[str]:
-    """Return the open action_id when this playbook fired inside its cooldown window and is still open."""
+    """
+    Return the open action_id when this playbook fired inside its cooldown window and is still open.
+
+    Fails closed: an open action whose `emitted_at` cannot be parsed is treated as inside the
+    window (the engine holds and emits a signal_update) rather than ignored. Re-firing a P0
+    playbook because a timestamp was in an unexpected format is the worse error.
+    """
     days = COOLDOWN_DAYS.get(playbook_id, 0)
     for a in actions_last_30d or []:
-        if a.get("playbook_id") == playbook_id and a.get("status") == "open":
-            try:
-                age = (today - date.fromisoformat(str(a.get("emitted_at")))).days
-            except ValueError:
-                continue
-            if age < days:
-                return str(a.get("action_id"))
+        if a.get("playbook_id") != playbook_id or a.get("status") != "open":
+            continue
+        emitted = parse_iso_date(a.get("emitted_at"))
+        if emitted is None:
+            return str(a.get("action_id") or f"unparseable-emitted_at:{a.get('emitted_at')!r}")
+        if (today - emitted).days < days:
+            return str(a.get("action_id"))
     return None
