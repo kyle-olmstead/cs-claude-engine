@@ -41,7 +41,7 @@ Before the RCA, read `${CLAUDE_PLUGIN_ROOT}/playbooks/enterprise_at_risk_turnaro
 
 - `PB-RET-01.churn_risk_rca.action.json` — the RCA
 - `PB-RET-01.renewal_defense_playbook.action.json` — the plan
-- `PB-RET-01.comm_1.md` — exec continuity or renewal kickoff draft (approval required)
+- `PB-RET-01.renewal_defense_playbook.comm_1.md` — exec continuity or renewal kickoff draft (approval required)
 - An internal escalation brief: render from the two actions into `PB-RET-01.escalation_brief.md` when the tier is Critical or High — one page: what, why (mechanism + evidence), what we need from whom by when, the ask of leadership.
 
 ## Proposed writes (offered, never automatic)

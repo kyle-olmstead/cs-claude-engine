@@ -28,7 +28,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 ## Artifacts
 
 - `PB-RET-02.renewal_defense_playbook.action.json`
-- `PB-RET-02.comm_1.md` — renewal kickoff draft to the economic buyer (or exec sponsor if no economic buyer is engaged); approval required.
+- `PB-RET-02.renewal_defense_playbook.comm_1.md` — renewal kickoff draft to the economic buyer (or exec sponsor if no economic buyer is engaged); approval required.
 - A one-page `PB-RET-02.renewal_plan.md` rendered from the action for the user's own renewal review: scenario table, stakeholder asks, timeline, value-story inputs and the measurements still needed.
 
 ## Proposed writes

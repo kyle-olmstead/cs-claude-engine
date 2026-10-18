@@ -23,6 +23,12 @@ from src.validation import enforce_policy
 log = logging.getLogger("cse.router")
 
 
+def prompt_short(prompt_id: str) -> str:
+    """`retention.churn_risk_rca` → `churn_risk_rca`. Part of every action id and file name so the
+    prompts in a chained playbook never share an identity (they used to, and overwrote each other)."""
+    return prompt_id.split(".")[-1]
+
+
 @dataclass
 class RoutedAction:
     account_id: str
@@ -57,7 +63,10 @@ class ActionRouter:
         policy_changes = enforce_policy(action)
         account_id = c360["account"]["account_id"]
         pb = action["playbook_id"]
-        action_id = signal_update_for or f"cse:{account_id}:{pb}:{self.run_date}"
+        short = prompt_short(prompt_id)
+        # Identity is per (account, playbook, prompt, run date). A chained playbook therefore gets one id per
+        # stage, so the adapter's external ids and the comm drafts of stage 2 never collide with stage 1.
+        action_id = signal_update_for or f"cse:{account_id}:{pb}:{short}:{self.run_date}"
         acct_dir = self.out_dir / account_id
         acct_dir.mkdir(parents=True, exist_ok=True)
 
@@ -72,7 +81,7 @@ class ActionRouter:
         }
         files: List[str] = []
         suffix = "signal_update" if signal_update_for else "action"
-        action_path = acct_dir / f"{pb}.{prompt_id.split('.')[-1]}.{suffix}.json"
+        action_path = acct_dir / f"{pb}.{short}.{suffix}.json"
         action_path.write_text(json.dumps({"provenance": provenance, "action": action}, indent=2, ensure_ascii=False), encoding="utf-8")
         files.append(str(action_path))
 
@@ -83,7 +92,7 @@ class ActionRouter:
                 "subject": comm["subject"], "tone": comm["tone_notes"], "send_after_days": comm["send_after_days"],
                 "approval_status": "pending", "approved_by": None,
             }
-            path = acct_dir / f"{pb}.comm_{i + 1}.md"
+            path = acct_dir / f"{pb}.{short}.comm_{i + 1}.md"
             path.write_text("---\n" + "\n".join(f"{k}: {json.dumps(v)}" for k, v in fm.items()) + "\n---\n\n" + comm["body_markdown"] + "\n", encoding="utf-8")
             files.append(str(path))
 

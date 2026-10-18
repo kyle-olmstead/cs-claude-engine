@@ -171,6 +171,22 @@ def test_offline_pipeline(tmp_path):
     assert {a["playbook_id"] for a in summary["actions"]} == {"PB-RET-01", "PB-CAD-01"} and not summary["errors"]
 
 
+def test_chained_playbook_prompts_have_distinct_identity_and_drafts(tmp_path):
+    """E2 (audit P0-1): two prompts in one playbook used to share an action_id and overwrite each other's comm_1.md."""
+    from src.orchestrator import Orchestrator
+    orch = Orchestrator(tmp_path, dry_run=True, offline=True, csm_name="t", today="2026-10-16")
+    summary = orch.run(Path("examples/sample_customer_360.json"), only_playbook="PB-CAD-01")
+    actions = [a for a in summary["actions"] if a["playbook_id"] == "PB-CAD-01"]
+    assert len(actions) == 2, actions
+    ids = {a["prompt_id"]: a for a in actions}
+    assert "adoption.feature_depth_audit" in ids and "expansion.executive_ebr_generator" in ids
+    acct_dir = tmp_path / "acc_01HZXK3V8Q"
+    comms = sorted(p.name for p in acct_dir.glob("PB-CAD-01.*.comm_*.md"))
+    assert comms == ["PB-CAD-01.executive_ebr_generator.comm_1.md", "PB-CAD-01.feature_depth_audit.comm_1.md"], comms
+    action_ids = {json.loads((acct_dir / f).read_text())["provenance"]["action_id"] for f in ("PB-CAD-01.feature_depth_audit.action.json", "PB-CAD-01.executive_ebr_generator.action.json")}
+    assert len(action_ids) == 2 and all(":2026-10-16" in i for i in action_ids), action_ids
+
+
 def test_triggers_only_cli(tmp_path):
     out = subprocess.run([sys.executable, str(ROOT / "src/orchestrator.py"), "--input", str(ROOT / "examples/sample_customer_360.json"), "--triggers-only", "--out", str(tmp_path)],
                          cwd=tmp_path, capture_output=True, text=True)

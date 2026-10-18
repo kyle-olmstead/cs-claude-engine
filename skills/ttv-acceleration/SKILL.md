@@ -32,7 +32,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 ## Artifacts
 
 - `PB-ADP-01.ttv_acceleration.action.json` with the `onboarding_plan` block
-- `PB-ADP-01.comm_1.md` — check-in to the customer-side owner (approval required)
+- `PB-ADP-01.ttv_acceleration.comm_1.md` — check-in to the customer-side owner (approval required)
 - `PB-ADP-01.unblock_plan.md` — the plan as a one-pager: blocker, owners, three to five dated actions, milestone target date, first-win statement
 
 ## Proposed writes

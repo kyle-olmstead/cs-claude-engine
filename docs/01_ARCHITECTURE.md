@@ -294,7 +294,7 @@ class CRMAdapter(Protocol):
     def create_task(self, account_id: str, task: dict, external_id: str) -> str: ...
 ```
 
-`external_id` is `cse:<account_id>:<playbook_id>:<run_date>[:<n>]`. HubSpot stores it in a custom property `cse_external_id`; Salesforce in an External ID field; Gainsight in the CTA's `externalId`. Re-running the same day updates in place.
+`external_id` is `cse:<account_id>:<playbook_id>:<prompt_short_name>:<run_date>[:<n>]`. HubSpot stores it in a custom property `cse_external_id`; Salesforce in an External ID field; Gainsight in the CTA's `externalId`. Re-running the same day updates in place.
 
 ### 7.3 Communications
 

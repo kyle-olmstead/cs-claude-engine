@@ -36,7 +36,7 @@ If the account has no usage data (`data_quality_flags` contains `usage_unavailab
 
 - `PB-ADP-02.feature_depth_audit.action.json` with the `feature_audit` block
 - `PB-ADP-02.feature_audit.md` — position vs peers, ranked recommendations with fit factors, fading features, the narrative, and expansion-fit notes
-- `PB-ADP-02.comm_<n>.md` — up to two enablement emails (approval required); in-app nudges go in the action as `digital_nudge` entries, not as communications
+- `PB-ADP-02.feature_depth_audit.comm_<n>.md` — up to two enablement emails (approval required); in-app nudges go in the action as `digital_nudge` entries, not as communications
 
 ## Proposed writes
 

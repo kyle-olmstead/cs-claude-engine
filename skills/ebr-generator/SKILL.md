@@ -43,7 +43,7 @@ An EBR/QBR due within 30 days (`cadence.next_ebr_due_at`, or a matching meeting 
 - `PB-CAD-01.ebr_script.md` — slide-by-slide: title, claim, talk track, ask the room, visual, sources, risk if challenged
 - `PB-CAD-01.ebr_roi_table.md` — rows with formulas, low/base/high, measured flags, unmeasured outcomes with proposed measurement
 - `PB-CAD-01.ebr_prework.json` — three unknowns, missing attendee, risk to pre-empt, duration
-- `PB-CAD-01.comm_1.md` — pre-read email to the most senior attendee (approval required)
+- `PB-CAD-01.executive_ebr_generator.comm_1.md` — pre-read email to the most senior attendee (approval required)
 
 When the session offers a slides artifact type or `~~documents`, offer to build the deck from the script — the script's `visual` line per slide is the brief for each slide. Keep the script as the source of truth; the deck is a rendering.
 

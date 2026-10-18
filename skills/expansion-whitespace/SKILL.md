@@ -41,7 +41,7 @@ For enterprise/mid-market, offer to continue into `ebr-generator` with `variant 
 
 - `PB-EXP-0x.whitespace_expansion_finder.action.json` with the `expansion_brief` block
 - `PB-EXP-0x.expansion_brief.md` — readiness, ranked plays with sizing basis and confidence, sponsor, objection and response, sales handoff notes with `do_not_say`
-- `PB-EXP-0x.comm_1.md` — sponsor discovery email (approval required); for digital, the in-app nudge copy is in the action as a `digital_nudge`
+- `PB-EXP-0x.whitespace_expansion_finder.comm_1.md` — sponsor discovery email (approval required); for digital, the in-app nudge copy is in the action as a `digital_nudge`
 
 ## Proposed writes
 

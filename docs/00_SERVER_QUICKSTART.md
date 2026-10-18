@@ -177,7 +177,7 @@ Full trigger logic, SLAs, roles, and exit criteria: `docs/03_PLAYBOOKS_MASTER_IN
 * **No invented numbers.** Prompts forbid fabrication; every numeric claim in a Claude output must cite a field path in the Customer 360 (`evidence[].source_path`). The orchestrator resolves every cited path against the input document and fails the action when more than two do not exist.
 * **PII minimization.** Transcripts and survey verbatims are redacted of emails, phone numbers, and payment identifiers before reaching Claude (`call_transcript_parser.redact_pii`); contacts carry email hashes, never raw emails.
 * **Prompt-injection handling.** Customer-authored text is wrapped in `<untrusted_customer_text>` tags and scrubbed of tag-like instructions; the prompts treat its contents as data.
-* **Idempotent writes.** Every CRM write carries a deterministic `external_id` (`cse:<account_id>:<playbook_id>:<run_date>[:n]`) so re-runs update rather than duplicate.
+* **Idempotent writes.** Every CRM write carries a deterministic `external_id` (`cse:<account_id>:<playbook_id>:<prompt_short_name>:<run_date>[:n]`) so re-runs update rather than duplicate.
 * **Audit trail.** Every Claude request/response pair is logged with prompt id, prompt version, model, token counts, and the SHA-256 of the input document.
 
 ---
