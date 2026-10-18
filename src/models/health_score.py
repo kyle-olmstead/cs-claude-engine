@@ -11,7 +11,9 @@ Design principles
   component. `HealthScoreResult.components` carries the contribution of each so Claude
   can explain the score without re-deriving it.
 * Hard-gate overrides cap the score; they never floor it.
-* Missing inputs re-normalize within a component rather than silently scoring zero.
+* Missing inputs re-normalize within a component, and a component with no inputs at all is left
+  out with the other weights re-normalized, so a missing connector never scores an account as 0
+  (adoption) or 100 (support). Below 60% observed weight the band is `insufficient_data`.
 * No I/O except in the CLI entry point.
 
 Usage
@@ -50,6 +52,12 @@ BAND_YELLOW_MIN = 50.0
 
 TREND_COEFFICIENT = 0.25
 TREND_CLAMP = 8.0
+
+# A component with no inputs at all is *unobserved*: it is left out and the remaining weights are
+# re-normalized, so which connectors a team has installed does not move accounts across bands.
+# When less than this share of the total weight is observed, the band is "insufficient_data".
+MIN_COVERAGE = 0.60
+BAND_INSUFFICIENT = "insufficient_data"
 
 
 class HealthScoreDriftError(RuntimeError):
@@ -152,22 +160,26 @@ def mean_available(values: Sequence[Optional[float]]) -> Optional[float]:
 @dataclass
 class ComponentScore:
     name: str
-    normalized: float            # 0..100 (0 if no inputs at all, flagged in explanation)
-    weight: float
-    contribution: float          # normalized * weight
+    normalized: float            # 0..100 (0 when unobserved; see `observed`)
+    weight: float                # nominal weight from config
+    contribution: float          # normalized * effective_weight; contributions sum to the raw score
     raw_inputs: Dict[str, Any] = field(default_factory=dict)
     sub_scores: Dict[str, Optional[float]] = field(default_factory=dict)
     explanation: str = ""
     inputs_missing: List[str] = field(default_factory=list)
+    observed: bool = True        # False when the component had no inputs at all
+    effective_weight: float = 0.0  # weight / observed weight; 0 when unobserved
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "normalized": round(self.normalized, 2),
             "weight": self.weight,
+            "effective_weight": round(self.effective_weight, 4),
+            "observed": self.observed,
             "contribution": round(self.contribution, 2),
             "raw_inputs": self.raw_inputs,
-            "explanation": self.explanation,
+            "explanation": self.explanation if self.observed else self.explanation + " No inputs: component left out and the other weights re-normalized.",
         }
 
 
@@ -198,9 +210,9 @@ def score_adoption(c360: Dict[str, Any], weight: float) -> ComponentScore:
         f"seat utilization {util} → {None if s_util is None else round(s_util)}; mean of available."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("adoption", n, weight, n * weight,
+    return ComponentScore("adoption", n, weight, 0.0,
                           {"dau_mau_30d": dau_mau, "feature_depth_30d": depth, "seat_utilization": util},
-                          {"dau_mau": s_dau, "depth": s_depth, "utilization": s_util}, expl, missing)
+                          {"dau_mau": s_dau, "depth": s_depth, "utilization": s_util}, expl, missing, observed=normalized is not None)
 
 
 def score_engagement(c360: Dict[str, Any], weight: float) -> ComponentScore:
@@ -225,15 +237,15 @@ def score_engagement(c360: Dict[str, Any], weight: float) -> ComponentScore:
         f"exec engaged {exec_engaged} → {None if s_exec is None else round(s_exec)} (w .3)."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("engagement", n, weight, n * weight,
+    return ComponentScore("engagement", n, weight, 0.0,
                           {"days_since_last_login": days_login, "engaged_contacts_90d": engaged_contacts, "exec_sponsor_engaged_180d": exec_engaged},
-                          {"login": s_login, "contacts": s_contacts, "exec": s_exec}, expl, missing)
+                          {"login": s_login, "contacts": s_contacts, "exec": s_exec}, expl, missing, observed=normalized is not None)
 
 
 def score_support(c360: Dict[str, Any], weight: float) -> ComponentScore:
-    sup = c360.get("support", {})
-    open_tickets = sup.get("open_tickets") or []
-    p1p2_open = sum(1 for t in open_tickets if t.get("priority") in ("P1", "P2"))
+    sup = c360.get("support") or {}
+    open_tickets = sup.get("open_tickets")          # None = no support desk data at all; [] = a desk with nothing open
+    p1p2_open = None if open_tickets is None else sum(1 for t in open_tickets if t.get("priority") in ("P1", "P2"))
     per_100 = _get(sup, "tickets_per_100_seats_30d")
     csat = _get(sup, "avg_csat_90d")
     frt = _get(sup, "median_first_response_hours_90d")
@@ -246,13 +258,13 @@ def score_support(c360: Dict[str, Any], weight: float) -> ComponentScore:
     normalized = mean_available([s_p1p2, s_volume, s_csat, s_frt])
     missing = [k for k, v in (("tickets_per_100_seats_30d", per_100), ("avg_csat_90d", csat), ("median_first_response_hours_90d", frt)) if v is None]
     expl = (
-        f"Open P1/P2 {p1p2_open} → {round(s_p1p2)}; tickets/100 seats {per_100} → {None if s_volume is None else round(s_volume)}; "
+        f"Open P1/P2 {p1p2_open} → {None if s_p1p2 is None else round(s_p1p2)}; tickets/100 seats {per_100} → {None if s_volume is None else round(s_volume)}; "
         f"CSAT {csat} → {None if s_csat is None else round(s_csat)}; first response {frt}h → {None if s_frt is None else round(s_frt)}; mean of available."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("support", n, weight, n * weight,
+    return ComponentScore("support", n, weight, 0.0,
                           {"open_p1_p2": p1p2_open, "tickets_per_100_seats_30d": per_100, "avg_csat_90d": csat, "median_first_response_hours_90d": frt},
-                          {"p1p2": s_p1p2, "volume": s_volume, "csat": s_csat, "first_response": s_frt}, expl, missing)
+                          {"p1p2": s_p1p2, "volume": s_volume, "csat": s_csat, "first_response": s_frt}, expl, missing, observed=normalized is not None)
 
 
 def score_sentiment(c360: Dict[str, Any], weight: float) -> ComponentScore:
@@ -273,9 +285,9 @@ def score_sentiment(c360: Dict[str, Any], weight: float) -> ComponentScore:
         f"transcript sentiment {transcript} → {None if s_transcript is None else round(s_transcript)} (w .4); weights re-normalized over available inputs."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("sentiment", n, weight, n * weight,
+    return ComponentScore("sentiment", n, weight, 0.0,
                           {"latest_nps": nps, "nps_trend": trend, "transcript_sentiment_30d": transcript},
-                          {"nps": s_nps, "trend": s_trend, "transcript": s_transcript}, expl, missing)
+                          {"nps": s_nps, "trend": s_trend, "transcript": s_transcript}, expl, missing, observed=normalized is not None)
 
 
 def score_relationship(c360: Dict[str, Any], weight: float) -> ComponentScore:
@@ -295,9 +307,9 @@ def score_relationship(c360: Dict[str, Any], weight: float) -> ComponentScore:
         f"CSM touch {days_touch}d → {None if s_touch is None else round(s_touch)} (w .2)."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("relationship", n, weight, n * weight,
+    return ComponentScore("relationship", n, weight, 0.0,
                           {"champion_status": champion_status, "multithreading_depth": depth, "days_since_last_csm_touch": days_touch},
-                          {"champion": s_champion, "depth": s_depth, "csm_touch": s_touch}, expl, missing)
+                          {"champion": s_champion, "depth": s_depth, "csm_touch": s_touch}, expl, missing, observed=normalized is not None)
 
 
 def score_commercial(c360: Dict[str, Any], weight: float) -> ComponentScore:
@@ -316,9 +328,9 @@ def score_commercial(c360: Dict[str, Any], weight: float) -> ComponentScore:
         f"mean{' minus 30 for 90d contraction' if contraction else ''}."
     )
     n = normalized if normalized is not None else 0.0
-    return ComponentScore("commercial", n, weight, n * weight,
+    return ComponentScore("commercial", n, weight, 0.0,
                           {"days_to_renewal": days_renewal, "payment_days_past_due": past_due, "contraction_flag_90d": contraction},
-                          {"renewal_proximity": s_renewal, "past_due": s_past_due}, expl, missing)
+                          {"renewal_proximity": s_renewal, "past_due": s_past_due}, expl, missing, observed=normalized is not None)
 
 
 # --------------------------------------------------------------------------------------
@@ -376,11 +388,13 @@ class HealthScoreResult:
     overrides_applied: List[Override]
     score_30d_ago: Optional[float]
     inputs_missing: List[str]
+    coverage: float = 1.0        # share of the total weight that had inputs
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "score": round(self.score, 2),
             "band": self.band,
+            "coverage": round(self.coverage, 4),
             "raw_weighted_sum": round(self.raw_weighted_sum, 2),
             "trend_adjustment": round(self.trend_adjustment, 2),
             "components": [c.to_dict() for c in self.components],
@@ -390,11 +404,12 @@ class HealthScoreResult:
         }
 
     def explain(self) -> str:
-        lines = [f"Health score {self.score:.1f} ({self.band.upper()})"]
+        lines = [f"Health score {self.score:.1f} ({self.band.upper()}; {self.coverage:.0%} of the weight observed)"]
         if self.score_30d_ago is not None:
             lines.append(f"  30-day delta: {self.score - self.score_30d_ago:+.1f} (trend adjustment {self.trend_adjustment:+.1f})")
         for c in sorted(self.components, key=lambda c: c.contribution, reverse=True):
-            lines.append(f"  {c.name:<13} {c.normalized:6.1f} × {c.weight:.2f} = {c.contribution:6.2f}   {c.explanation}")
+            lines.append(f"  {c.name:<13} {c.normalized:6.1f} × {c.effective_weight:.3f} = {c.contribution:6.2f}   {c.explanation}" if c.observed
+                         else f"  {c.name:<13}    n/a × 0.000 =   0.00   {c.explanation} (no inputs; weight re-normalized)")
         if self.overrides_applied:
             lines.append("  Overrides: " + ", ".join(f"{o.rule} (cap {o.cap:.0f})" for o in self.overrides_applied))
         if self.inputs_missing:
@@ -431,6 +446,11 @@ def compute_health_score(c360: Dict[str, Any], weights: Optional[HealthWeights] 
         score_relationship(c360, wd["relationship"]),
         score_commercial(c360, wd["commercial"]),
     ]
+    observed_w = sum(c.weight for c in components if c.observed)
+    coverage = observed_w / sum(wd.values())
+    for c in components:
+        c.effective_weight = (c.weight / observed_w) if (c.observed and observed_w > 0) else 0.0
+        c.contribution = c.normalized * c.effective_weight
     raw = sum(c.contribution for c in components)
 
     health_block = c360.get("health") or {}
@@ -449,13 +469,14 @@ def compute_health_score(c360: Dict[str, Any], weights: Optional[HealthWeights] 
     missing = [f"{c.name}.{m}" for c in components for m in c.inputs_missing]
     return HealthScoreResult(
         score=score,
-        band=band_for(score),
+        band=band_for(score) if coverage >= MIN_COVERAGE else BAND_INSUFFICIENT,
         raw_weighted_sum=raw,
         trend_adjustment=trend_adj,
         components=components,
         overrides_applied=overrides,
         score_30d_ago=prior_score,
         inputs_missing=missing,
+        coverage=coverage,
     )
 
 
@@ -483,10 +504,15 @@ def attach_to_customer_360(c360: Dict[str, Any], result: HealthScoreResult) -> D
         "overrides_applied": [o.to_dict() for o in result.overrides_applied],
         # Persisted so the next run can use the uncapped prior sum for the trend (see docs/02 §B1).
         "raw_weighted_sum": round(result.raw_weighted_sum, 2),
+        "coverage": round(result.coverage, 4),
     })
     health.setdefault("score_30d_ago", result.score_30d_ago)
     health.setdefault("score_90d_ago", None)
     out["health"] = health
+    if result.band == BAND_INSUFFICIENT:
+        flags = list(out.get("data_quality_flags") or [])
+        flags.append(f"health_coverage_{result.coverage:.0%}_below_{MIN_COVERAGE:.0%}_floor")
+        out["data_quality_flags"] = flags
     return out
 
 

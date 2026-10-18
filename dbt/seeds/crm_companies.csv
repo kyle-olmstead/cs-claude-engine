@@ -2,3 +2,4 @@ id,name,segment,owner_id,industry,created_at
 acc_01HZXK3V8Q,Contoso Logistics,enterprise,csm_017,Transportation & Logistics,2024-01-18
 acc_02FABRIKAM,Fabrikam Health,mid_market,csm_017,Healthcare,2024-06-03
 acc_03BRIGHTL,Brightline Studio,digital,csm_022,Media,2026-02-10
+acc_04NORTHWD,Northwind Traders,mid_market,csm_017,Wholesale,2025-09-01

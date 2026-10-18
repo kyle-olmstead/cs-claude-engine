@@ -11,7 +11,7 @@ models:
         tests: [not_null]
       - name: health_band
         tests:
-          - accepted_values: {values: ["green", "yellow", "red"]}
+          - accepted_values: {values: ["green", "yellow", "red", "insufficient_data"]}
       - name: champion_status
         tests:
           - accepted_values: {values: ["active", "at_risk", "departed", "none"]}

@@ -374,7 +374,8 @@ def parse_and_analyze_pending(c360: Dict[str, Any], offline: bool = False, inter
     doc = json.loads(json.dumps(c360))
     internal_domains = tuple(internal_domains) or tuple(d for d in os.environ.get("CSE_INTERNAL_DOMAINS", "").split(",") if d)
     internal_names = tuple(m.get("name") for m in doc["account"].get("team", []) if m.get("name"))
-    signals = doc["sentiment"].setdefault("transcript_signals", [])
+    signals = doc["sentiment"].get("transcript_signals") or []      # the block may be null when no call recorder is connected
+    doc["sentiment"]["transcript_signals"] = signals
     known = {s["call_id"] for s in signals}
     for conv in doc.get("conversations", []):
         if conv.get("parsed") or not conv.get("transcript_uri") or conv["call_id"] in known:

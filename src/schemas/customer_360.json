@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cs-claude-engine.dev/schemas/customer_360.json",
   "title": "Customer360",
-  "description": "The complete, per-account input document assembled daily from the warehouse. This is the only source of truth for a Claude call. Every field Claude may cite as evidence lives here. Dates are ISO-8601 (YYYY-MM-DD); timestamps are RFC 3339 UTC. Monetary values are in the reporting currency, annualized unless the field name says otherwise.",
+  "description": "The complete, per-account input document assembled daily from the warehouse. This is the only source of truth for a Claude call. Every field Claude may cite as evidence lives here. Dates are ISO-8601 (YYYY-MM-DD); timestamps are RFC 3339 UTC. Monetary values are in the reporting currency, annualized unless the field name says otherwise. Source-dependent metrics (usage, support, sentiment, lifecycle) are nullable: null means the connector for that block is absent or returned nothing, and the scorer leaves the component out rather than scoring it as 0 or 100.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -354,8 +354,10 @@
           "enum": [
             "green",
             "yellow",
-            "red"
-          ]
+            "red",
+            "insufficient_data"
+          ],
+          "description": "green ≥ 75, yellow 50–74, red < 50; insufficient_data when less than 60% of the score's weight had inputs (treat the score as unknown, not as a signal)"
         },
         "score_30d_ago": {
           "type": [
@@ -435,6 +437,16 @@
               },
               "explanation": {
                 "type": "string"
+              },
+              "observed": {
+                "type": "boolean",
+                "description": "False when the component had no inputs; it is then left out and the other weights re-normalized."
+              },
+              "effective_weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "weight / observed weight; 0 when unobserved. Contributions use this, so they sum to the raw score."
               }
             }
           }
@@ -483,6 +495,15 @@
             "string",
             "null"
           ]
+        },
+        "coverage": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Share of the total health weight whose components had at least one input. Written by the scorer."
         }
       }
     },
@@ -503,7 +524,10 @@
       ],
       "properties": {
         "dau_mau_30d": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 1
         },
@@ -516,20 +540,32 @@
           "maximum": 1
         },
         "mau_30d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "active_users_30d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "feature_depth_30d": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 1
         },
         "feature_breadth_30d": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 1
         },
@@ -542,7 +578,10 @@
           "maximum": 1
         },
         "seat_utilization": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0
         },
         "seat_utilization_90d_ago": {
@@ -553,26 +592,41 @@
           "minimum": 0
         },
         "utilization_drift_90d": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "days_since_last_login": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "core_features_used": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "core_features_unused": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "fading_features": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -597,13 +651,19 @@
           }
         },
         "integrations_connected": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "feature_gate_hits_14d": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -629,7 +689,10 @@
           }
         },
         "usage_by_business_unit": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -681,7 +744,10 @@
       ],
       "properties": {
         "open_tickets": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -725,18 +791,28 @@
                 }
               }
             }
-          }
+          },
+          "description": "null means no support-desk data at all (the component is left out of the score); an empty list means a connected desk with nothing open."
         },
         "tickets_30d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "tickets_per_100_seats_30d": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0
         },
         "p1_p2_opened_90d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "avg_csat_90d": {
@@ -748,7 +824,10 @@
           "maximum": 5
         },
         "csat_responses_90d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "median_first_response_hours_90d": {
@@ -759,7 +838,10 @@
           "minimum": 0
         },
         "incidents_affecting_account_90d": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         }
       }
@@ -818,7 +900,10 @@
           "maximum": 1
         },
         "ecri": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 100,
           "description": "Executive Champion Risk Index"
@@ -833,7 +918,10 @@
           }
         },
         "nps_responses": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -870,7 +958,10 @@
           }
         },
         "transcript_signals": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -959,7 +1050,10 @@
           }
         },
         "verbatim_signals": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object"
           }
@@ -1353,17 +1447,24 @@
       ],
       "properties": {
         "stage": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "enum": [
             "onboarding",
             "adopting",
             "established",
             "renewal_window",
-            "churned"
+            "churned",
+            null
           ]
         },
         "days_since_term_start": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "kickoff_at": {
@@ -1406,7 +1507,10 @@
           ]
         },
         "onboarding_steps": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,

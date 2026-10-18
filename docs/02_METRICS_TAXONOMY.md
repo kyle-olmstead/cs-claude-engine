@@ -114,6 +114,10 @@ HealthScore = clamp( Σ_i w_i · C_i  +  TrendAdj , 0, 100 )   subject to overri
 | Relationship | 0.15 | champion status, multithreading depth, days since last CSM touch | Champion: active→100, at_risk→50, none→30, departed→0. Depth: 1→20, 2→50, 3→75, 4+→100. CSM touch: ≤14d→100, 45d+→0. Weighted 0.5/0.3/0.2. |
 | Commercial | 0.15 | days to renewal, payment days past due, contraction flag (any seat/ARR decrease in 90d) | Renewal: ≥180d→100, 90d→80, 30d→60, 0d→40 (proximity raises stakes, not risk per se). Past due: 0→100, 30→60, 60+→0. Contraction: −30 if true. |
 
+**Missing data.** Within a component, missing inputs re-normalize over the inputs present (the formula column says where). A component with *no* inputs at all is **unobserved**: it is left out and the remaining weights are re-normalized, so `Score_raw = Σ(component × weight) / Σ(weight of observed components)`. The share of weight observed is recorded as `health.coverage`. Without this rule a team with no product analytics connected would score adoption as 0 and a team with no support desk would score support as 100, and the band would say more about the tool stack than the customer. `support.open_tickets = null` means no desk data (unobserved); `[]` means a connected desk with nothing open.
+
+**Coverage floor.** When less than **60%** of the weight is observed, the band is `insufficient_data` and `data_quality_flags` says so. The score is still computed from what exists, but it is not a signal: score-based triggers do not fire on it, expansion playbooks are suppressed, and the orchestrator is told to say which connectors would fill the gap.
+
 **Trend adjustment.** `TrendAdj = clamp( (Score_raw − Score_raw_30d_ago) × 0.25, −8, +8 )`. A falling score is penalized ahead of the level it falls to; a recovering score gets credit.
 
 **Hard-gate overrides** (applied after the weighted sum; the score is *capped*, never floored):
@@ -125,7 +129,7 @@ HealthScore = clamp( Σ_i w_i · C_i  +  TrendAdj , 0, 100 )   subject to overri
 | any open P1 older than 5 days | 65 |
 | `seat_utilization < 0.20` for 60+ days on a contract > $50k ARR | 55 |
 
-**Bands.** Green ≥ 75, Yellow 50–74, Red < 50. Band *transitions* are the alerting primitive, not the score itself.
+**Bands.** Green ≥ 75, Yellow 50–74, Red < 50, or `insufficient_data` below the coverage floor. Band *transitions* are the alerting primitive, not the score itself.
 
 **Implementation.** `health_score.compute_health_score()` and `mart_customer_health_daily.sql`. The two must agree within 0.5 points (see Architecture §3.3).
 

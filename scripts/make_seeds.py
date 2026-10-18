@@ -43,6 +43,9 @@ def main(as_of: date) -> None:
         ("acc_01HZXK3V8Q", "Contoso Logistics", "enterprise", "csm_017", "Transportation & Logistics", "2024-01-18", 240000, 500, "2025-01-18", "2027-01-18"),
         ("acc_02FABRIKAM", "Fabrikam Health", "mid_market", "csm_017", "Healthcare", "2024-06-03", 84000, 200, "2025-06-01", "2026-12-15"),
         ("acc_03BRIGHTL", "Brightline Studio", "digital", "csm_022", "Media", "2026-02-10", 9600, 20, "2026-02-10", "2027-02-10"),
+        # CRM-only account: no product analytics, no support desk, no surveys, no calls. Exercises the coverage
+        # re-normalization and the insufficient_data band on both the SQL and Python side (check_parity.py).
+        ("acc_04NORTHWD", "Northwind Traders", "mid_market", "csm_017", "Wholesale", "2025-09-01", 96000, 120, "2025-10-01", "2026-09-30"),
     ]
     write("crm_companies", [dict(id=a[0], name=a[1], segment=a[2], owner_id=a[3], industry=a[4], created_at=a[5]) for a in accounts])
 
@@ -57,6 +60,7 @@ def main(as_of: date) -> None:
         ("ct_11", "acc_02FABRIKAM", "dana.k@fabrikam.example", "Head of Revenue Ops", "director", "champion", "operations", True, False, "", "Fabrikam Health", 20),
         ("ct_12", "acc_02FABRIKAM", "omar.s@fabrikam.example", "CFO", "c_level", "economic_buyer", "finance", False, True, "", "Fabrikam Health", 70),
         ("ct_21", "acc_03BRIGHTL", "lee@brightline.example", "Studio Manager", "manager", "admin", "operations", True, False, "", "", 8),
+        ("ct_31", "acc_04NORTHWD", "priya.n@northwind.example", "Director of Finance", "director", "champion", "finance", True, False, "", "Northwind Traders", 11),
     ]
     write("crm_contacts", [dict(id=c[0], company_id=c[1], email=c[2], title=c[3], seniority=c[4], persona=c[5], function=c[6],
                                 is_champion=c[7], is_exec_sponsor=c[8], left_company_at=c[9], enriched_employer=c[10], tenure_months=c[11]) for c in contacts])
@@ -84,6 +88,8 @@ def main(as_of: date) -> None:
         act("acc_02FABRIKAM", "ct_12", "meeting", "inbound", d)
     # Brightline: digital, light touch
     act("acc_03BRIGHTL", "ct_21", "email", "inbound", 2, owner="csm_022")
+    # Northwind: CRM activity only
+    act("acc_04NORTHWD", "ct_31", "meeting", "inbound", 6); act("acc_04NORTHWD", "ct_31", "email", "outbound", 20)
     write("crm_activities", acts)
 
     # --- opportunities --------------------------------------------------------------

@@ -6,6 +6,7 @@ Conventions used below:
 - **Primary → Fallback** lists sources in preference order.
 - "Flag:" is the exact string to append to `data_quality_flags[]` when the field cannot be filled.
 - A field with no fallback and no flag is required by the schema; set it to a safe default noted in the row and flag it.
+- **When a whole category is absent** (no connector, or the connector returned nothing for this account), set that block's source-dependent fields to `null`, never to 0 or an empty value that looks like a measurement. In particular `support.open_tickets` is `null` when there is no desk and `[]` only when a connected desk has nothing open. The scorer leaves an input-less component out, re-normalizes the other weights, records `health.coverage`, and labels the band `insufficient_data` below 60 percent coverage.
 
 
 **Index (read only the section you need):**

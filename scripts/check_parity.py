@@ -19,7 +19,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -32,7 +32,7 @@ COLUMNS = [
     "multithreading_depth", "exec_sponsor_engaged_180d", "days_since_last_csm_touch", "champion_status", "replacement_identified",
     "open_p1_p2", "oldest_open_p1_age_days", "tickets_per_100_seats_30d", "avg_csat_90d", "median_first_response_hours_90d",
     "latest_nps", "nps_trend", "transcript_sentiment_30d", "raw_weighted_sum", "raw_weighted_sum_30d_ago", "health_score_30d_ago",
-    "health_score", "health_band", "trend_adjustment",
+    "health_score", "health_band", "trend_adjustment", "health_coverage", "support_observed",
 ]
 
 
@@ -40,12 +40,14 @@ def row_to_c360(r: Dict[str, Any]) -> Dict[str, Any]:
     """The subset of the Customer 360 the scorer reads, reconstructed from one mart row."""
     engaged = int(r.get("engaged_contacts_90d") or 0)
     stakeholders = [{"contact_id": f"ct_{i}", "engagements_90d": 1} for i in range(engaged)]
-    open_tickets: List[Dict[str, Any]] = []
+    open_tickets: Optional[List[Dict[str, Any]]] = []
     p1p2 = int(r.get("open_p1_p2") or 0)
     p1_age = r.get("oldest_open_p1_age_days")
     for i in range(p1p2):
         # the mart only keeps the count and the oldest P1 age; one P1 carries the age, the rest are P2
         open_tickets.append({"priority": "P1" if (i == 0 and p1_age is not None) else "P2", "age_days": int(p1_age or 0) if i == 0 else 0})
+    if r.get("support_observed") is False:
+        open_tickets = None            # the desk produced nothing for this account: the component is unobserved, not "100"
     return {
         "usage": {"dau_mau_30d": r.get("dau_mau_30d"), "feature_depth_30d": r.get("feature_depth_30d"), "seat_utilization": r.get("seat_utilization"),
                   "seat_utilization_90d_ago": r.get("seat_utilization_90d_ago"), "days_since_last_login": r.get("days_since_last_login")},
@@ -93,7 +95,7 @@ def main(argv=None) -> int:
         res = compute_health_score(row_to_c360(r), weights)
         delta = abs(res.score - float(r["health_score"]))
         worst = max(worst, delta)
-        ok = delta <= args.tolerance and res.band == r["health_band"]
+        ok = delta <= args.tolerance and res.band == r["health_band"] and abs(res.coverage - float(r.get("health_coverage") or 1.0)) < 1e-6
         failures += 0 if ok else 1
         comps = " ".join(f"{c.name[:3]}={c.normalized:.0f}" for c in res.components)
         print(f"{r['account_name'][:24]:24} {float(r['health_score']):7.2f} {res.score:7.2f} {delta:6.2f}  {'OK ' if ok else 'FAIL'} {r['health_band']:6} {comps}")

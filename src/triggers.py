@@ -24,18 +24,24 @@ def _bench(c: Dict[str, Any], key: str, default: Any = None) -> Any:
     return (c.get("benchmarks") or {}).get(key, DEFAULT_BENCHMARKS.get(seg, {}).get(key, default))
 
 
+def _score_is_usable(c: Dict[str, Any]) -> bool:
+    """A score built on less than 60% of its weight is unknown, not a signal (see health_score.MIN_COVERAGE)."""
+    return _g(c, "health.band") != "insufficient_data"
+
+
 def trig_ret_01(c: Dict[str, Any]) -> Optional[str]:
     h, h30 = _g(c, "health.score", 100), _g(c, "health.score_30d_ago")
+    usable = _score_is_usable(c)
     if _g(c, "health.band") == "red":
         return "health band red"
-    if h30 is not None and (h30 - h) >= 15:
+    if usable and h30 is not None and (h30 - h) >= 15:
         return f"health dropped {h30 - h:.0f} points in 30d"
     if _g(c, "relationship.champion.status") == "departed" and not _g(c, "relationship.champion.replacement_identified", False):
         return "champion departed without replacement"
     for t in _g(c, "support.open_tickets", []):
         if t.get("priority") == "P1" and (t.get("age_days") or 0) > 5:
             return f"P1 {t.get('ticket_id')} open {t.get('age_days')} days"
-    if _g(c, "contract.days_to_renewal", 999) <= 120 and h < 65:
+    if usable and _g(c, "contract.days_to_renewal", 999) <= 120 and h < 65:
         return "renewal within 120 days with health < 65"
     if _g(c, "sentiment.ecri", 0) >= 60:
         return f"ECRI {_g(c, 'sentiment.ecri')}"
@@ -89,7 +95,7 @@ def _gate_hits(c: Dict[str, Any]) -> int:
 
 
 def trig_exp_01(c: Dict[str, Any]) -> Optional[str]:
-    if _g(c, "account.segment") not in ("smb", "digital") or _g(c, "health.band") == "red":
+    if _g(c, "account.segment") not in ("smb", "digital") or _g(c, "health.band") == "red" or not _score_is_usable(c):
         return None
     if _g(c, "usage.seat_utilization", 0) >= 0.85:
         return "utilization ≥ 85%"

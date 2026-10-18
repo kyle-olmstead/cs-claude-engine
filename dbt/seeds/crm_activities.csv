@@ -25,3 +25,5 @@ act_00023,acc_02FABRIKAM,ct_11,email,outbound,2026-08-10,csm_017
 act_00024,acc_02FABRIKAM,ct_12,meeting,inbound,2026-09-25,csm_017
 act_00025,acc_02FABRIKAM,ct_12,meeting,inbound,2026-07-12,csm_017
 act_00026,acc_03BRIGHTL,ct_21,email,inbound,2026-10-13,csm_022
+act_00027,acc_04NORTHWD,ct_31,meeting,inbound,2026-10-09,csm_017
+act_00028,acc_04NORTHWD,ct_31,email,outbound,2026-09-25,csm_017

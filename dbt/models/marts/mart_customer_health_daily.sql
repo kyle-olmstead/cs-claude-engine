@@ -108,6 +108,16 @@ usage_90d_ago as (
     group by 1, 2
 ),
 
+usage_presence as (
+    -- the product source has produced at least one row for the account, ever. Without a row the
+    -- adoption inputs are unknown (null), not zero: a dormant account with history still scores 0.
+    select a.account_id, a.as_of_date, count(u.user_email) > 0 as usage_observed
+    from accounts a
+    left join {{ ref('stg_product__daily_usage') }} u
+        on u.account_id = a.account_id and u.usage_date <= a.as_of_date
+    group by 1, 2
+),
+
 features_30d as (
     select
         a.account_id,
@@ -165,6 +175,7 @@ support as (
     select
         a.account_id,
         a.as_of_date,
+        count(t.ticket_id) > 0                                                                                                  as support_observed,
         count(case when t.status not in ('solved', 'closed') and t.priority in ('P1', 'P2') then 1 end)                          as open_p1_p2,
         max(case when t.status not in ('solved', 'closed') and t.priority = 'P1'
                   then {{ dbt.datediff('t.created_at', 'a.as_of_date', 'day') }} end)                                                          as oldest_open_p1_age_days,
@@ -245,15 +256,16 @@ transcripts as (
 inputs as (
     select
         a.*,
-        -- adoption
-        case when u.mau_30d > 0 then least(u.avg_dau_30d / u.mau_30d, 1.0) end                                  as dau_mau_30d,
-        u.mau_30d,
-        u.active_users_30d,
-        f.core_features_used_30d / cast({{ core_feature_count }} as double)                                              as feature_depth_30d,
-        f.all_features_used_30d / cast(nullif(fu.all_feature_count, 0) as double)                                        as feature_breadth_30d,
-        case when a.seats_purchased > 0 then u.active_users_30d / cast(a.seats_purchased as double) end                   as seat_utilization,
-        case when a.seats_purchased > 0 then u90.active_users_30d_at_90d_ago / cast(a.seats_purchased as double) end      as seat_utilization_90d_ago,
-        {{ dbt.datediff('u.last_login_date', 'a.as_of_date', 'day') }}                                                          as days_since_last_login,
+        -- adoption (null, not 0, when the product source has never reported this account; mirrors usage.* = null in Python)
+        coalesce(up.usage_observed, false)                                                                      as usage_observed,
+        case when not up.usage_observed then null when u.mau_30d > 0 then least(u.avg_dau_30d / u.mau_30d, 1.0) end as dau_mau_30d,
+        case when up.usage_observed then u.mau_30d end                                                           as mau_30d,
+        case when up.usage_observed then u.active_users_30d end                                                  as active_users_30d,
+        case when up.usage_observed then f.core_features_used_30d / cast({{ core_feature_count }} as double) end        as feature_depth_30d,
+        case when up.usage_observed then f.all_features_used_30d / cast(nullif(fu.all_feature_count, 0) as double) end  as feature_breadth_30d,
+        case when up.usage_observed and a.seats_purchased > 0 then u.active_users_30d / cast(a.seats_purchased as double) end             as seat_utilization,
+        case when up.usage_observed and a.seats_purchased > 0 then u90.active_users_30d_at_90d_ago / cast(a.seats_purchased as double) end as seat_utilization_90d_ago,
+        case when up.usage_observed then {{ dbt.datediff('u.last_login_date', 'a.as_of_date', 'day') }} end                  as days_since_last_login,
         -- engagement / relationship
         ce.engaged_contacts_90d,
         case when ce.functions_engaged_90d >= 2 or ce.seniorities_engaged_90d >= 2 then ce.engaged_contacts_90d
@@ -262,10 +274,11 @@ inputs as (
         {{ dbt.datediff('ce.last_csm_touch_at', 'a.as_of_date', 'day') }}                                                       as days_since_last_csm_touch,
         coalesce(ch.champion_status, 'none')                                                                     as champion_status,
         coalesce(ch.replacement_identified, false)                                                               as replacement_identified,
-        -- support
+        -- support (support_observed = the desk produced any row for this account; mirrors support.open_tickets null vs [] in Python)
+        coalesce(s.support_observed, false)                                                                      as support_observed,
         coalesce(s.open_p1_p2, 0)                                                                                as open_p1_p2,
         s.oldest_open_p1_age_days,
-        case when a.seats_purchased > 0 then 100.0 * coalesce(s.tickets_30d, 0) / a.seats_purchased end          as tickets_per_100_seats_30d,
+        case when coalesce(s.support_observed, false) and a.seats_purchased > 0 then 100.0 * coalesce(s.tickets_30d, 0) / a.seats_purchased end as tickets_per_100_seats_30d,
         s.avg_csat_90d,
         s.median_first_response_hours_90d,
         -- sentiment
@@ -278,6 +291,7 @@ inputs as (
         t.transcript_sentiment_30d
     from accounts a
     left join usage_30d u          on u.account_id = a.account_id and u.as_of_date = a.as_of_date
+    left join usage_presence up    on up.account_id = a.account_id and up.as_of_date = a.as_of_date
     left join usage_90d_ago u90    on u90.account_id = a.account_id and u90.as_of_date = a.as_of_date
     left join features_30d f       on f.account_id = a.account_id and f.as_of_date = a.as_of_date
     cross join feature_universe fu
@@ -295,10 +309,11 @@ inputs as (
 normalized as (
     select
         i.*,
-        -- adoption sub-scores
-        least(100, greatest(0, (dau_mau_30d - 0.05) * 100.0 / 0.35))                                          as n_dau_mau,
-        least(100, greatest(0, feature_depth_30d * 100.0))                                                      as n_depth,
-        least(100, greatest(0, (seat_utilization - 0.30) * 100.0 / 0.60))                                     as n_util,
+        -- adoption sub-scores. Explicit null guards: greatest()/least() ignore NULLs on DuckDB and Postgres
+        -- (greatest(0, NULL) = 0), which would turn a missing input into a score of 0.
+        case when dau_mau_30d is null then null else least(100, greatest(0, (dau_mau_30d - 0.05) * 100.0 / 0.35)) end       as n_dau_mau,
+        case when feature_depth_30d is null then null else least(100, greatest(0, feature_depth_30d * 100.0)) end             as n_depth,
+        case when seat_utilization is null then null else least(100, greatest(0, (seat_utilization - 0.30) * 100.0 / 0.60)) end as n_util,
         -- engagement sub-scores
         case when days_since_last_login is null then null
              when days_since_last_login <= 0 then 100
@@ -313,7 +328,7 @@ normalized as (
              else 100 end                                                                                        as n_contacts,
         case when exec_sponsor_engaged_180d then 100 else 0 end                                                  as n_exec,
         -- support sub-scores
-        case when open_p1_p2 = 0 then 100 when open_p1_p2 = 1 then 60 else 20 end                                as n_p1p2,
+        case when not support_observed then null when open_p1_p2 = 0 then 100 when open_p1_p2 = 1 then 60 else 20 end as n_p1p2,
         case when tickets_per_100_seats_30d is null then null
              else least(100, greatest(0, 100 - (tickets_per_100_seats_30d - 2.0) * 100.0 / 8.0)) end           as n_volume,
         case when avg_csat_90d is null then null else least(100, greatest(0, (avg_csat_90d - 1) / 4.0 * 100)) end as n_csat,
@@ -374,16 +389,31 @@ components as (
     from normalized n
 ),
 
-weighted as (
+observed as (
     select
         c.*,
-        coalesce(c_adoption, 0)     * {{ w['adoption'] }}     as contrib_adoption,
-        coalesce(c_engagement, 0)   * {{ w['engagement'] }}   as contrib_engagement,
-        coalesce(c_support, 0)      * {{ w['support'] }}      as contrib_support,
-        coalesce(c_sentiment, 0)    * {{ w['sentiment'] }}    as contrib_sentiment,
-        coalesce(c_relationship, 0) * {{ w['relationship'] }} as contrib_relationship,
-        coalesce(c_commercial, 0)   * {{ w['commercial'] }}   as contrib_commercial
+        -- share of the total weight whose components had at least one input (mirrors HealthScoreResult.coverage)
+        (case when c_adoption     is not null then {{ w['adoption'] }}     else 0 end)
+      + (case when c_engagement   is not null then {{ w['engagement'] }}   else 0 end)
+      + (case when c_support      is not null then {{ w['support'] }}      else 0 end)
+      + (case when c_sentiment    is not null then {{ w['sentiment'] }}    else 0 end)
+      + (case when c_relationship is not null then {{ w['relationship'] }} else 0 end)
+      + (case when c_commercial   is not null then {{ w['commercial'] }}   else 0 end) as observed_weight
     from components c
+),
+
+weighted as (
+    select
+        o.*,
+        observed_weight / ({{ w['adoption'] }} + {{ w['engagement'] }} + {{ w['support'] }} + {{ w['sentiment'] }} + {{ w['relationship'] }} + {{ w['commercial'] }}) as health_coverage,
+        -- an unobserved component contributes 0 and its weight is redistributed over the observed ones
+        coalesce(c_adoption     * {{ w['adoption'] }}     / nullif(observed_weight, 0), 0) as contrib_adoption,
+        coalesce(c_engagement   * {{ w['engagement'] }}   / nullif(observed_weight, 0), 0) as contrib_engagement,
+        coalesce(c_support      * {{ w['support'] }}      / nullif(observed_weight, 0), 0) as contrib_support,
+        coalesce(c_sentiment    * {{ w['sentiment'] }}    / nullif(observed_weight, 0), 0) as contrib_sentiment,
+        coalesce(c_relationship * {{ w['relationship'] }} / nullif(observed_weight, 0), 0) as contrib_relationship,
+        coalesce(c_commercial   * {{ w['commercial'] }}   / nullif(observed_weight, 0), 0) as contrib_commercial
+    from observed o
 ),
 
 raw_scores as (
@@ -453,6 +483,9 @@ final as (
         c_adoption, c_engagement, c_support, c_sentiment, c_relationship, c_commercial,
         contrib_adoption, contrib_engagement, contrib_support, contrib_sentiment, contrib_relationship, contrib_commercial,
         raw_weighted_sum,
+        health_coverage,
+        support_observed,
+        usage_observed,
         prior_raw_30d                                                     as raw_weighted_sum_30d_ago,
         coalesce(trend_adjustment_calc, 0)                               as trend_adjustment,
 
@@ -477,7 +510,8 @@ final as (
 
 select
     f.*,
-    case when health_score >= 75 then 'green' when health_score >= 50 then 'yellow' else 'red' end as health_band,
+    case when health_coverage < 0.60 then 'insufficient_data'
+         when health_score >= 75 then 'green' when health_score >= 50 then 'yellow' else 'red' end as health_band,
     case when health_score_30d_ago >= 75 then 'green' when health_score_30d_ago >= 50 then 'yellow' when health_score_30d_ago is not null then 'red' end as health_band_30d_ago,
     current_timestamp as computed_at
 from final f

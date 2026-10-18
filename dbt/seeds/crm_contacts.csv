@@ -7,3 +7,4 @@ ct_05,acc_01HZXK3V8Q,raj.mehta@contoso.example,VP Procurement,vp,procurement,pro
 ct_11,acc_02FABRIKAM,dana.k@fabrikam.example,Head of Revenue Ops,director,champion,operations,True,False,,Fabrikam Health,20
 ct_12,acc_02FABRIKAM,omar.s@fabrikam.example,CFO,c_level,economic_buyer,finance,False,True,,Fabrikam Health,70
 ct_21,acc_03BRIGHTL,lee@brightline.example,Studio Manager,manager,admin,operations,True,False,,,8
+ct_31,acc_04NORTHWD,priya.n@northwind.example,Director of Finance,director,champion,finance,True,False,,Northwind Traders,11

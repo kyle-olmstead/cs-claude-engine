@@ -8,8 +8,9 @@ import jsonschema
 import pytest
 
 from src.claude_client import ClaudeEmitter, InvalidOutputError, schema_for
-from src.models.health_score import assert_no_drift, compute_health_score
+from src.models.health_score import assert_no_drift, attach_to_customer_360, compute_health_score
 from src.orchestrator import load_schema, wrap_untrusted
+from src.validation import validate_c360
 from src.prompts import PromptRegistry
 from src.testing import OfflineEmitter
 from src.triggers import PLAYBOOKS, evaluate_triggers, registry_table
@@ -19,6 +20,7 @@ from tests.fakes import FakeClient, Resp
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE = json.loads((ROOT / "examples/sample_customer_360.json").read_text())
+SCHEMA_C360 = load_schema("customer_360.json")
 BASE = load_schema("playbook_action.json")
 
 
@@ -65,6 +67,65 @@ def test_health_score_renormalizes_missing_inputs():
     r = compute_health_score(doc)
     sent = next(c for c in r.components if c.name == "sentiment")
     assert sent.normalized == 50.0  # only the "stable" trend input remains → 50
+
+
+def _uncapped():
+    """The sample is capped at 60 by the departed champion; lift the cap so the arithmetic is visible."""
+    doc = json.loads(json.dumps(SAMPLE))
+    doc["relationship"]["champion"]["status"] = "active"
+    doc["health"]["score_30d_ago"] = None
+    return doc
+
+
+def test_missing_connector_does_not_move_the_score():
+    """E1 (audit P1-1): a missing product-analytics source used to score adoption 0; a missing desk scored support 100."""
+    base = compute_health_score(_uncapped())
+    assert base.coverage == 1.0 and base.band in ("green", "yellow", "red")
+    no_usage = _uncapped()
+    for k in ("dau_mau_30d", "feature_depth_30d", "seat_utilization"):
+        no_usage["usage"][k] = None
+    r = compute_health_score(no_usage)
+    adoption = next(c for c in r.components if c.name == "adoption")
+    assert adoption.observed is False and adoption.contribution == 0.0 and adoption.effective_weight == 0.0
+    assert abs(r.coverage - 0.75) < 1e-9
+    observed = [c for c in r.components if c.observed]
+    assert abs(sum(c.effective_weight for c in observed) - 1.0) < 1e-9        # weights re-normalized to 1
+    assert abs(r.raw_weighted_sum - sum(c.normalized * c.weight for c in observed) / 0.75) < 1e-6
+    no_desk = _uncapped()
+    no_desk["support"]["open_tickets"] = None
+    for k in ("tickets_per_100_seats_30d", "avg_csat_90d", "median_first_response_hours_90d"):
+        no_desk["support"][k] = None
+    r2 = compute_health_score(no_desk)
+    support = next(c for c in r2.components if c.name == "support")
+    assert support.observed is False and support.normalized == 0.0 and support.contribution == 0.0   # not 100 any more
+    empty_desk = _uncapped()
+    empty_desk["support"]["open_tickets"] = []                               # a connected desk with nothing open still counts
+    s3 = next(c for c in compute_health_score(empty_desk).components if c.name == "support")
+    assert s3.observed is True and s3.sub_scores["p1p2"] == 100.0
+
+
+def test_crm_only_document_is_insufficient_data_and_fires_no_score_triggers():
+    doc = _uncapped()
+    for k in ("dau_mau_30d", "feature_depth_30d", "seat_utilization"):
+        doc["usage"][k] = None
+    doc["support"]["open_tickets"] = None
+    for k in ("tickets_per_100_seats_30d", "avg_csat_90d", "median_first_response_hours_90d"):
+        doc["support"][k] = None
+    for k in ("latest_nps", "nps_trend", "transcript_sentiment_30d"):
+        doc["sentiment"][k] = None
+    r = compute_health_score(doc)
+    assert abs(r.coverage - 0.45) < 1e-9 and r.band == "insufficient_data"
+    attached = attach_to_customer_360(doc, r)
+    assert attached["health"]["band"] == "insufficient_data" and attached["health"]["coverage"] == 0.45
+    assert any(f.startswith("health_coverage_45%") for f in attached["data_quality_flags"])
+    assert not validate_c360(attached, SCHEMA_C360), validate_c360(attached, SCHEMA_C360)[:3]
+    attached["contract"]["days_to_renewal"] = 60                              # would fire "renewal < 120 and health < 65" on a usable score
+    attached["health"]["score"] = 40.0
+    reasons = [f.reason for f in evaluate_triggers(attached)]
+    assert not any("health < 65" in x or "dropped" in x or "band red" in x for x in reasons), reasons
+    attached["account"]["segment"] = "smb"
+    attached["usage"]["pql_score"] = 90                                       # expansion signal, but the score is not usable
+    assert not any(f.spec.playbook_id == "PB-EXP-01" for f in evaluate_triggers(attached))
 
 
 # ---- triggers ---------------------------------------------------------------------
