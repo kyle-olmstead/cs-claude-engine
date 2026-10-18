@@ -308,3 +308,20 @@ def test_roi_model_reproduces_the_memo():
     seats2 = model(Assumptions(open_seats=2))["open_seat"]
     assert abs(seats2["unspent_comp_over_gap"] - 2 * o["unspent_comp_over_gap"]) < 1e-6
     assert seats2["engine_cost_over_gap"] == o["engine_cost_over_gap"]   # the engine does not cost more for a second seat
+
+
+def test_catalog_scoping_never_leaks_another_accounts_inputs(tmp_path):
+    """E4 (audit P0-3): an account-keyed catalog with no entry for this account used to be returned whole."""
+    from src.orchestrator import Orchestrator
+    overrides = {"roi_inputs": {"acc_OTHER": {"loaded_hourly_rate": 95, "headcount": 1200}}, "_scopes": {"roi_inputs": "account"}}
+    orch = Orchestrator(tmp_path, dry_run=True, offline=True, csm_name="t", today="2026-10-16", catalog_overrides=overrides)
+    doc = json.loads(json.dumps(SAMPLE))                           # account acc_01HZXK3V8Q, not in the catalog
+    assert orch.resolve_input("catalog:roi_inputs|{}", doc, {}) == {}
+    with pytest.raises(KeyError):
+        orch.resolve_input("catalog:roi_inputs", doc, {})           # no alternative: a miss is an error, not a leak
+    doc["account"]["account_id"] = "acc_OTHER"
+    assert orch.resolve_input("catalog:roi_inputs|{}", doc, {})["headcount"] == 1200
+    seg = orch.resolve_input("catalog:benchmarks", doc, {})         # segment-scoped: only this segment's row
+    assert "ttv_p75_days" in seg and "enterprise" not in seg
+    with pytest.raises(ValueError):
+        Orchestrator(tmp_path, dry_run=True, offline=True, csm_name="t", catalog_overrides={"_scopes": {"pricing": "tenant"}})

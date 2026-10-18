@@ -1,12 +1,12 @@
 ---
 id: expansion.executive_ebr_generator
-version: 2.5.0
+version: 2.5.1
 model: claude-opus-5-5
 temperature: 0.4
 max_tokens: 8000
 inputs:
   retention_context_json: catalog:retention_context|{}
-  roi_inputs_json: catalog:roi_inputs
+  roi_inputs_json: catalog:roi_inputs|{}
   segment_benchmarks_json: c360:benchmarks|catalog:benchmarks
   variant: run:variant
   today: run:today

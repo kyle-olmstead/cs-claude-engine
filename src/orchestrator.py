@@ -42,7 +42,7 @@ try:
 except ImportError:  # pragma: no cover
     pass
 
-from src.catalogs import CATALOGS, DEFAULT_BENCHMARKS                       # noqa: E402
+from src.catalogs import CATALOGS, CATALOG_SCOPES, DEFAULT_BENCHMARKS, VALID_SCOPES  # noqa: E402
 from src.claude_client import ClaudeCallResult, ClaudeEmitter, InvalidOutputError  # noqa: E402
 from src.models.health_score import HealthScoreDriftError, HealthWeights, assert_no_drift, attach_to_customer_360, compute_health_score  # noqa: E402
 from src.prompts import PromptRegistry                                       # noqa: E402
@@ -163,7 +163,12 @@ class Orchestrator:
         self.registry = PromptRegistry(default_model=DEFAULT_MODEL)
         self.c360_schema = load_schema("customer_360.json")
         self.action_schema = load_schema("playbook_action.json")
-        self.catalogs: Dict[str, Any] = {**CATALOGS, **(catalog_overrides or {})}
+        overrides = dict(catalog_overrides or {})
+        self.catalog_scopes: Dict[str, str] = {**CATALOG_SCOPES, **(overrides.pop("_scopes", None) or {})}
+        bad = {k: v for k, v in self.catalog_scopes.items() if v not in VALID_SCOPES}
+        if bad:
+            raise ValueError(f"catalog scopes must be one of {VALID_SCOPES}: {bad}")
+        self.catalogs: Dict[str, Any] = {**CATALOGS, **overrides}
         self.weights = HealthWeights.load()
         self.router = ActionRouter(out_dir, dry_run, self.today)
         self.enrich = enrich and bool(os.environ.get("CLAY_WEBHOOK_URL"))
@@ -184,7 +189,15 @@ class Orchestrator:
     # -- inputs -----------------------------------------------------------------------
 
     def resolve_input(self, spec: str, c360: Dict[str, Any], run_vars: Dict[str, Any]) -> Any:
-        """Resolve a prompt-header source spec: run:key | c360:path | catalog:name | text:literal | {} | []."""
+        """
+        Resolve a prompt-header source spec: run:key | c360:path | catalog:name | text:literal | {} | [].
+
+        `catalog:name` is resolved by the catalog's declared scope (src/catalogs.CATALOG_SCOPES, overridable
+        with `_scopes` in the --catalogs file): account-scoped catalogs return only this account's entry,
+        segment-scoped ones only this segment's, global ones the whole value. A scoped catalog with no entry
+        for this account or segment is a miss and the next `|` alternative is tried. The whole catalog is
+        never returned as a fallback, so one account's inputs cannot land in another account's prompt.
+        """
         account_id = get_path(c360, "account.account_id")
         segment = get_path(c360, "account.segment", "mid_market")
         for alt in (a.strip() for a in spec.split("|")):
@@ -201,11 +214,13 @@ class Orchestrator:
                     return v
             if kind == "catalog" and arg in self.catalogs:
                 cat = self.catalogs[arg]
-                if isinstance(cat, dict) and account_id in cat:
-                    return cat[account_id]
-                if isinstance(cat, dict) and segment in cat and arg in ("benchmarks", "retention_context"):
-                    return cat[segment]
-                return cat
+                scope = self.catalog_scopes.get(arg, "global")
+                if scope == "global":
+                    return cat
+                key = account_id if scope == "account" else segment
+                if isinstance(cat, dict) and key in cat:
+                    return cat[key]
+                continue   # scoped miss: never fall through to the whole catalog
             if kind == "text":
                 return arg
         raise KeyError(f"could not resolve input spec {spec!r}")

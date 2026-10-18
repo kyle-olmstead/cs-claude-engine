@@ -90,6 +90,9 @@ python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out 
 # 5. Your own catalogs (feature catalog with your retention lifts, price book, value milestones, ROI inputs by account id,
 #    retention context by segment, benchmarks by segment) — a single JSON file overriding the defaults in src/catalogs.py
 python -m src.orchestrator --input ./feeds/ --out ./out --catalogs config/catalogs.json
+#    Catalogs are resolved by scope (src/catalogs.py CATALOG_SCOPES): benchmarks and retention_context by segment,
+#    everything else global. Supplying per-account values? Declare it, and the resolver returns only this
+#    account's entry (never the whole catalog): {"roi_inputs": {"acc_1": {...}}, "_scopes": {"roi_inputs": "account"}}
 ```
 
 ### Verify

@@ -64,3 +64,18 @@ CATALOGS: Dict[str, Any] = {
     "pricing": DEFAULT_PRICING_CATALOG,
     "roi_inputs": DEFAULT_ROI_INPUTS,
 }
+
+# How each catalog is keyed. The orchestrator resolves `catalog:<name>` by this scope and never falls
+# through to the whole catalog: an account-scoped catalog with no entry for this account is a miss
+# (the prompt header's next alternative applies, usually `{}`), not a dump of every account's data
+# into the prompt. Override files may add `"_scopes": {"roi_inputs": "account"}` when they supply
+# per-account values.
+CATALOG_SCOPES: Dict[str, str] = {
+    "benchmarks": "segment",
+    "retention_context": "segment",
+    "value_milestones": "global",
+    "feature_catalog": "global",
+    "pricing": "global",
+    "roi_inputs": "global",        # the default is a placeholder; a real deployment supplies per-account values with scope "account"
+}
+VALID_SCOPES = ("account", "segment", "global")
