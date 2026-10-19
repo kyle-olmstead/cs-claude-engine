@@ -18,11 +18,11 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 
 ## When it applies
 
-`lifecycle.stage == "onboarding"`, `lifecycle.value_milestones_reached == []`, and `lifecycle.days_since_term_start > benchmarks.ttv_p75_days`. If a milestone has been reached, say so and offer `feature-depth-audit` instead. If the account is simply early (under p50), say that too — the engine does not chase week-one accounts.
+`lifecycle.stage == "onboarding"`, `lifecycle.value_milestones_reached == []`, and `lifecycle.days_since_term_start > benchmarks.ttv_p75_days`. If a milestone has been reached, say so and offer `feature-depth-audit` instead. If the account is simply early (under p50), say that too: the engine does not chase week-one accounts.
 
 ## Inputs beyond the Customer 360
 
-- `value_milestone_definitions_json` — from `~~product analytics` milestone definitions when the connector exposes them, else the plugin default `DEFAULT_VALUE_MILESTONES` in `${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py`. Tell the user which was used.
+- `value_milestone_definitions_json`: from `~~product analytics` milestone definitions when the connector exposes them, else the plugin default `DEFAULT_VALUE_MILESTONES` in `${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py`. Tell the user which was used.
 - Onboarding history: `lifecycle.onboarding_steps[]`, `lifecycle.kickoff_notes`, sessions from `~~calendar`, onboarding-tagged tickets from `~~support desk`, and `integration`/`onboarding` themes from transcript signals. Pull these into the document before running if they are empty.
 
 ## Prompt
@@ -32,13 +32,13 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 ## Artifacts
 
 - `PB-ADP-01.ttv_acceleration.action.json` with the `onboarding_plan` block
-- `PB-ADP-01.ttv_acceleration.comm_1.md` — check-in to the customer-side owner (approval required)
-- `PB-ADP-01.unblock_plan.md` — the plan as a one-pager: blocker, owners, three to five dated actions, milestone target date, first-win statement
+- `PB-ADP-01.ttv_acceleration.comm_1.md`: check-in to the customer-side owner (approval required)
+- `PB-ADP-01.unblock_plan.md`: the plan as a one-pager: blocker, owners, three to five dated actions, milestone target date, first-win statement
 
 ## Proposed writes
 
 - ~~crm: `onboarding_risk_tier` (watch / at_risk / stalled) on the account; a task to the implementation owner for each vendor-side action.
-- ~~support desk: when the blocker is `technical_integration` or `vendor_delay`, a ticket *draft* tagged `onboarding-blocker` with the prerequisite named — created only on approval.
+- ~~support desk: when the blocker is `technical_integration` or `vendor_delay`, a ticket *draft* tagged `onboarding-blocker` with the prerequisite named; created only on approval.
 - ~~calendar: a proposed configuration/training session on the date the plan names.
 
 ## Rules specific to this playbook

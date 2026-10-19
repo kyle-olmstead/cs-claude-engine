@@ -1,7 +1,7 @@
 version: 2
 models:
   - name: mart_customer_health_daily
-    description: One row per account per day — health components, score, band, and every raw input (docs/02_METRICS_TAXONOMY.md §B1).
+    description: "One row per account per day: health components, score, band, and every raw input (docs/02_METRICS_TAXONOMY.md §B1)."
     columns:
       - name: account_id
         tests: [not_null]

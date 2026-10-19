@@ -19,11 +19,11 @@ metadata:
 Build the **stack profile**: the mapping from the engine's tool categories to the connectors
 this user actually has. Every other skill in this plugin reads the profile first.
 
-## Step 1 — Inventory what is connected
+## Step 1: Inventory what is connected
 
 List the tools available in this session. Look at the MCP/connector tool names and descriptions
 (`mcp__<server>__<tool>` names; a `ListConnectors` tool when present). Do not ask the user what
-they have connected before looking — the point of this skill is to see for them.
+they have connected before looking: the point of this skill is to see for them.
 
 Classify every server into one category from `${CLAUDE_PLUGIN_ROOT}/CONNECTORS.md`:
 
@@ -48,31 +48,31 @@ A server can fill more than one category (Zoom = conversation intelligence + cal
 = CRM + survey + support when those hubs are in use). If two servers compete for one category,
 prefer the one with richer read tools and note the alternate.
 
-## Step 2 — Confirm the mapping
+## Step 2: Confirm the mapping
 
 Show the user a short table: category → connector found → what it unlocks → what is missing.
-Use `AskUserQuestion` only for genuine ambiguity (two CRMs; a warehouse *and* product analytics
-— ask which is the source of truth for usage). Otherwise present the mapping and ask for a
+Use `AskUserQuestion` only for genuine ambiguity (two CRMs; a warehouse *and* product analytics,
+in which case ask which is the source of truth for usage). Otherwise present the mapping and ask for a
 one-word confirmation.
 
 For each **missing** category, say in one line what the engine loses without it, taken from the
 "Minimum viable setup" section of `CONNECTORS.md`. Do not block setup on missing optional
-categories, and name the path from `CONNECTORS.md` ("When your tool isn't here") when the user's tool has no connector. Block only if `~~crm` is missing — then explain that the CRM is the account spine
+categories, and name the path from `CONNECTORS.md` ("When your tool isn't here") when the user's tool has no connector. Block only if `~~crm` is missing; then explain that the CRM is the account spine
 and suggest connecting one before continuing.
 
-## Step 3 — Capture the operator context
+## Step 3: Capture the operator context
 
 Ask, in one `AskUserQuestion` call, only what cannot be inferred:
 
-1. The user's name as it appears in the CRM as an owner (so "my book" resolves) — skip if the
+1. The user's name as it appears in the CRM as an owner (so "my book" resolves); skip if the
    CRM connector exposes the current user.
-2. Segment names used in the CRM and how they map to `enterprise / mid_market / smb / digital`
-   — skip if the CRM uses those words.
+2. Segment names used in the CRM and how they map to `enterprise / mid_market / smb / digital`;
+   skip if the CRM uses those words.
 3. Internal email domains (so transcript speakers can be split internal vs customer).
 4. Whether the user wants the engine to *propose* CRM writes (default) or never touch the CRM
    at all (read-only mode).
 
-## Step 4 — Save the stack profile
+## Step 4: Save the stack profile
 
 Write the profile to `cs-engine/stack-profile.md` in the working folder (create the folder).
 Use exactly this shape so other skills can parse it:
@@ -89,7 +89,7 @@ segment_map: { "<crm value>": "enterprise", ... }
 |---|---|---|---|
 | crm | HubSpot | mcp__HubSpot | connected |
 | support desk | Zendesk | mcp__Zendesk | connected |
-| conversation intelligence | — | — | missing (sentiment pillar reduced) |
+| conversation intelligence | none | none | missing (sentiment pillar reduced) |
 ...
 ```
 
@@ -97,7 +97,7 @@ If memory tools are available, also save a two-line summary under `/areas/cs-cla
 (category → connector only; no credentials, no customer data) so a new conversation can skip
 re-discovery.
 
-## Step 5 — Prove the install
+## Step 5: Prove the install
 
 Run the bundled sample through the deterministic scorer and show the result:
 
@@ -117,7 +117,7 @@ and explain the health score from its `health.components` instead. Either way, e
 ## Rules
 
 - Never ask the user for API keys or tokens. The connectors are already authorized in Claude.
-- Never store customer data in the stack profile — it describes tools, not accounts.
+- Never store customer data in the stack profile: it describes tools, not accounts.
 - If a connector is present but its tools fail (auth expired, scope missing), record it as
   `connected (failing: <reason>)` and continue; do not abort setup.
 - Keep the whole interaction under five exchanges. Setup is a door, not a destination.

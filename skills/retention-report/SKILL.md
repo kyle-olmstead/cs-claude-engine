@@ -45,7 +45,7 @@ Run the functions with Python when available (write the input JSON and a five-li
 
 ## Output
 
-1. Headline: the metric, the window, the segment, the number — one line each.
+1. Headline: the metric, the window, the segment, the number, one line each.
 2. Decomposition table: start ARR, expansion, contraction, churn, end ARR, new-logo ARR (excluded), logos in cohort, churned logos.
 3. Benchmarks from `docs/02_METRICS_TAXONOMY.md` Part E for the segment, with one sentence of interpretation (top quartile / median / below).
 4. Caveats that apply: ramp-driven expansion included or excluded, FX, merged accounts, sample size for win rates (< 20 closed opps → low confidence), CRM-derived ARR.
@@ -54,5 +54,5 @@ Run the functions with Python when available (write the input JSON and a five-li
 ## Rules
 
 - Never annualize a monthly NRR with `^12`.
-- GRR is capped at 100% by construction; if the data produces more, the cohort rule was broken — recompute.
+- GRR is capped at 100% by construction; if the data produces more, the cohort rule was broken: recompute.
 - Do not invent cost, margin, or CAC inputs; ask once and remember the answer in the stack profile for this user.

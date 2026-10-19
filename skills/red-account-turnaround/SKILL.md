@@ -31,22 +31,22 @@ If `actions_last_30d` or `history/actions.jsonl` shows an open PB-RET-01 inside 
 
 ## Prompt chain
 
-1. `${CLAUDE_PLUGIN_ROOT}/prompts/retention/churn_risk_rca.prompt` — produces the diagnosis. Build the dated timeline from the last 120 days before choosing a mechanism; name one interrupting intervention; include the disambiguating question when confidence < 0.75.
-2. `${CLAUDE_PLUGIN_ROOT}/prompts/retention/renewal_defense_playbook.prompt` with `rca_json` = the RCA's `diagnosis` object — produces the plan. Evaluate all three scenarios; one kickoff/continuity draft only.
+1. `${CLAUDE_PLUGIN_ROOT}/prompts/retention/churn_risk_rca.prompt`: produces the diagnosis. Build the dated timeline from the last 120 days before choosing a mechanism; name one interrupting intervention; include the disambiguating question when confidence < 0.75.
+2. `${CLAUDE_PLUGIN_ROOT}/prompts/retention/renewal_defense_playbook.prompt` with `rca_json` = the RCA's `diagnosis` object: produces the plan. Evaluate all three scenarios; one kickoff/continuity draft only.
 3. If any NPS verbatim or call is newer than the last run and lacks a signal, run `prompts/core/sentiment_analyzer.prompt` on it first and merge the result into the document.
 
 Before the RCA, read `${CLAUDE_PLUGIN_ROOT}/playbooks/enterprise_at_risk_turnaround.md` §2 (severity tiers) and §7 (the save conversation) so the plan's internal escalation and first-touch owner match the tier: Critical → internal exec sponsor touches within 48h; High → CSM within 72h; Elevated → 5 business days.
 
 ## Artifacts
 
-- `PB-RET-01.churn_risk_rca.action.json` — the RCA
-- `PB-RET-01.renewal_defense_playbook.action.json` — the plan
-- `PB-RET-01.renewal_defense_playbook.comm_1.md` — exec continuity or renewal kickoff draft (approval required)
-- An internal escalation brief: render from the two actions into `PB-RET-01.escalation_brief.md` when the tier is Critical or High — one page: what, why (mechanism + evidence), what we need from whom by when, the ask of leadership.
+- `PB-RET-01.churn_risk_rca.action.json`: the RCA
+- `PB-RET-01.renewal_defense_playbook.action.json`: the plan
+- `PB-RET-01.renewal_defense_playbook.comm_1.md`: exec continuity or renewal kickoff draft (approval required)
+- An internal escalation brief: render from the two actions into `PB-RET-01.escalation_brief.md` when the tier is Critical or High. One page: what, why (mechanism + evidence), what we need from whom by when, the ask of leadership.
 
 ## Proposed writes (offered, never automatic)
 
-- ~~crm: `cse_risk_tier = red_<driver>` on the account; task "Red account review — <account>" for the CSM and CS leader, due 2 days; `cse_scenario` on the renewal opportunity.
+- ~~crm: `cse_risk_tier = red_<driver>` on the account; task "Red account review: <account>" for the CSM and CS leader, due 2 days; `cse_scenario` on the renewal opportunity.
 - ~~chat: P0 alert to the red-accounts channel named in the stack profile (summary, confidence, items awaiting approval).
 - ~~calendar: a proposed hold for the exec continuity meeting inside the first-touch window.
 - ~~documents: save the RCA + plan as one document for the war room.

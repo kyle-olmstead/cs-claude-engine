@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "cs-engine",
-      "description": "AI Customer Success operating system: Customer 360 assembly, explainable health scoring, churn RCA, renewal defense, onboarding acceleration, feature-depth audit, expansion whitespace, executive business reviews, and a scheduled book review — all against the connectors you already have.",
+      "description": "AI Customer Success operating system: Customer 360 assembly, explainable health scoring, churn RCA, renewal defense, onboarding acceleration, feature-depth audit, expansion whitespace, executive business reviews, and a scheduled book review, all against the connectors you already have.",
       "source": {
         "source": "github",
         "repo": "kyle-olmstead/cs-claude-engine"

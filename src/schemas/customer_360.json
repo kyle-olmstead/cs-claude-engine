@@ -1660,7 +1660,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Flags set during assembly (plugin mode) — what was missing and why."
+      "description": "Flags set during assembly (plugin mode): what was missing and why."
     },
     "_view_note": {
       "type": "array",

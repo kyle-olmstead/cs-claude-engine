@@ -1,7 +1,7 @@
 """
 Test doubles. `OfflineEmitter` stands in for the Claude client (`--offline`, CI, demos) and
-produces a deterministic, schema-valid PlaybookAction so the whole pipeline — views, validation,
-policy floors, routing, files — can be exercised with no API key.
+produces a deterministic, schema-valid PlaybookAction so the whole pipeline (views, validation,
+policy floors, routing, files) can be exercised with no API key.
 """
 
 from __future__ import annotations

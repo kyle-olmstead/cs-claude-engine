@@ -1,13 +1,13 @@
-# 00 — Server mode: quickstart and technical overview
+# 00. Server mode: quickstart and technical overview
 
-> **In plain English.** Plugin mode (the README) runs the engine inside one person's Claude account using their connectors. Server mode runs the *same* engine as a scheduled job against your data warehouse — every account, every night, with history and an audit log — and writes results back to the CRM through the same approval rules. It needs an engineer and takes one to two weeks. This page is the install guide and the technical overview for that path. If you're not setting up server mode, you don't need it.
+> **In plain English.** Plugin mode (the README) runs the engine inside one person's Claude account using their connectors. Server mode runs the *same* engine as a scheduled job against your data warehouse (every account, every night, with history and an audit log) and writes results back to the CRM through the same approval rules. It needs an engineer and takes one to two weeks. This page is the install guide and the technical overview for that path. If you're not setting up server mode, you don't need it.
 
 ---
 
 ## Prerequisites
 
 * Python 3.10+
-* An Anthropic API key (`ANTHROPIC_API_KEY`) — for live runs only; everything below up to "Run against your warehouse" works without one
+* An Anthropic API key (`ANTHROPIC_API_KEY`), for live runs only; everything below up to "Run against your warehouse" works without one
 * For your own data: a warehouse dbt supports (Snowflake, BigQuery, Databricks, Postgres, Redshift) with your CRM, billing, product, support, survey and call data landed by your ELT tool
 * Optional: HubSpot private-app token, Salesforce connected-app credentials, Clay webhook URL, Slack bot token
 
@@ -22,7 +22,7 @@ pip install -r requirements-dev.txt dbt-duckdb        # dbt-duckdb is for the lo
 
 ## Two minutes: the whole pipeline on your laptop, no warehouse
 
-The repo ships a complete dbt project (`dbt/`) with the fourteen upstream tables as **seeds** — a synthetic history for three accounts, including the sample account from `examples/`. It builds on DuckDB, runs the marts and their tests, and the parity script proves the SQL health score and the Python health score agree to the cent.
+The repo ships a complete dbt project (`dbt/`) with the fourteen upstream tables as **seeds**: a synthetic history for three accounts, including the sample account from `examples/`. It builds on DuckDB, runs the marts and their tests, and the parity script proves the SQL health score and the Python health score agree to the cent.
 
 ```bash
 cd dbt
@@ -47,7 +47,7 @@ export CSE_DRY_RUN=true                       # default: never write to CRM unle
 ```
 A `.env` file in the repo root is loaded automatically.
 
-If the engine will write back to HubSpot, create these custom properties first — four text properties on **Company** (`cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`), one on Company and one on Task for idempotency (`cse_external_id`), and a date property `cse_last_playbook_at` on Company. Salesforce equivalents are external-id fields `CSE_External_Id__c` on Account, Contact, and Task.
+If the engine will write back to HubSpot, create these custom properties first: four text properties on **Company** (`cse_risk_tier`, `expansion_candidate`, `onboarding_risk_tier`, `cse_last_playbook`), one on Company and one on Task for idempotency (`cse_external_id`), and a date property `cse_last_playbook_at` on Company. Salesforce equivalents are external-id fields `CSE_External_Id__c` on Account, Contact, and Task.
 
 ## Run against the bundled example
 
@@ -61,7 +61,7 @@ python -m src.orchestrator --input examples/sample_customer_360.json --offline -
 python -m src.orchestrator --input examples/sample_customer_360.json --triggers-only --out ./out
 #   --triggers-only scores every account and reports which playbooks would fire, nothing else.
 
-# With ANTHROPIC_API_KEY set — real Claude reasoning, still no external writes:
+# With ANTHROPIC_API_KEY set (real Claude reasoning, still no external writes):
 python -m src.orchestrator --input examples/sample_customer_360.json --dry-run --out ./out
 ```
 
@@ -69,9 +69,9 @@ python -m src.orchestrator --input examples/sample_customer_360.json --dry-run -
 
 Pointing the project at real data is three edits, all in `dbt/`:
 
-1. **Profile** — add your warehouse target to `dbt/profiles.yml` (templates for Snowflake, BigQuery and Postgres are already there, reading credentials from env vars) and run with `--target <name>`.
-2. **Sources** — in `dbt/models/sources.yml`, set the dbt vars `source_database` / `source_schema` to where your ELT lands the raw tables, and change each table's `identifier` to your table name. The column names each staging model expects are documented there; if yours differ, rename inside the matching `dbt/models/staging/stg_*.sql` — that is the only place source column names appear.
-3. **Weights** — `config/health_weights.json` is the single source of truth; `python scripts/sync_health_weights.py --write` copies it into `dbt_project.yml`, and `--check` runs in CI so the two can never drift.
+1. **Profile**: add your warehouse target to `dbt/profiles.yml` (templates for Snowflake, BigQuery and Postgres are already there, reading credentials from env vars) and run with `--target <name>`.
+2. **Sources**: in `dbt/models/sources.yml`, set the dbt vars `source_database` / `source_schema` to where your ELT lands the raw tables, and change each table's `identifier` to your table name. The column names each staging model expects are documented there; if yours differ, rename inside the matching `dbt/models/staging/stg_*.sql`; that is the only place source column names appear.
+3. **Weights**: `config/health_weights.json` is the single source of truth; `python scripts/sync_health_weights.py --write` copies it into `dbt_project.yml`, and `--check` runs in CI so the two can never drift.
 
 ```bash
 # 1. Build the marts against your warehouse
@@ -88,7 +88,7 @@ python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out
 python -m src.orchestrator --input ./feeds/ --csm "Priya Natarajan" --out ./out --batch
 
 # 5. Your own catalogs (feature catalog with your retention lifts, price book, value milestones, ROI inputs by account id,
-#    retention context by segment, benchmarks by segment) — a single JSON file overriding the defaults in src/catalogs.py
+#    retention context by segment, benchmarks by segment): a single JSON file overriding the defaults in src/catalogs.py
 python -m src.orchestrator --input ./feeds/ --out ./out --catalogs config/catalogs.json
 #    Catalogs are resolved by scope (src/catalogs.py CATALOG_SCOPES): benchmarks and retention_context by segment,
 #    everything else global. Supplying per-account values? Declare it, and the resolver returns only this
@@ -108,13 +108,13 @@ Outputs land in `./out/<account_id>/<playbook_id>.<prompt>.action.json` plus any
 
 ## The operating loop
 
-1. **Transform** — dbt builds `mart_customer_health_daily` and `mart_retention_nrr_grr` from CRM, billing, telemetry, support, survey, and conversation sources.
-2. **Assemble** — `src/orchestrator.py` builds one `Customer360` document per account (validated against `src/schemas/customer_360.json`), enriching stakeholders through Clay and parsing recent call transcripts.
-3. **Score** — `src/models/health_score.py` computes the weighted health score with full component-level explainability and hard-gate overrides (champion departed, payment past due, open P1).
-4. **Trigger** — the orchestrator evaluates playbook trigger conditions (`docs/03_PLAYBOOKS_MASTER_INDEX.md`) and selects the prompts to run.
-5. **Reason** — Claude is called with a cached system prompt, the Customer 360 as context, and a forced tool call whose `input_schema` is `src/schemas/playbook_action.json`. The response is a `PlaybookAction`: diagnosis, evidence, confidence, CRM writes, drafted communications, and tasks.
-6. **Act** — validated actions route to adapters (HubSpot, Salesforce, Gainsight, Clay, Slack). Anything that touches a customer or changes a forecast passes through a human approval gate.
-7. **Learn** — every action and its outcome (renewed, churned, expanded, no-op) is logged so weights, thresholds, and prompts are recalibrated quarterly.
+1. **Transform**: dbt builds `mart_customer_health_daily` and `mart_retention_nrr_grr` from CRM, billing, telemetry, support, survey, and conversation sources.
+2. **Assemble**: `src/orchestrator.py` builds one `Customer360` document per account (validated against `src/schemas/customer_360.json`), enriching stakeholders through Clay and parsing recent call transcripts.
+3. **Score**: `src/models/health_score.py` computes the weighted health score with full component-level explainability and hard-gate overrides (champion departed, payment past due, open P1).
+4. **Trigger**: the orchestrator evaluates playbook trigger conditions (`docs/03_PLAYBOOKS_MASTER_INDEX.md`) and selects the prompts to run.
+5. **Reason**: Claude is called with a cached system prompt, the Customer 360 as context, and a forced tool call whose `input_schema` is `src/schemas/playbook_action.json`. The response is a `PlaybookAction`: diagnosis, evidence, confidence, CRM writes, drafted communications, and tasks.
+6. **Act**: validated actions route to adapters (HubSpot, Salesforce, Gainsight, Clay, Slack). Anything that touches a customer or changes a forecast passes through a human approval gate.
+7. **Learn**: every action and its outcome (renewed, churned, expanded, no-op) is logged so weights, thresholds, and prompts are recalibrated quarterly.
 
 ---
 
@@ -130,14 +130,14 @@ Outputs land in `./out/<account_id>/<playbook_id>.<prompt>.action.json` plus any
 | `src/triggers.py` | The playbook registry: triggers, precedence, cooldowns; generates the registry table for the system prompt |
 | `src/router.py` | Policy floors → files → approval queue / adapters (live mode) |
 | `src/catalogs.py` | Default benchmarks, feature catalog, price book, value milestones, ROI inputs |
-| `src/testing.py` | `OfflineEmitter` — deterministic stand-in for Claude |
+| `src/testing.py` | `OfflineEmitter`: deterministic stand-in for Claude |
 | `src/validate.py` | CLI the plugin skills call |
 | `src/models/` | `health_score.py`, `metrics_calculator.py` |
 | `src/tools/` | Clay enrichment + CRM adapters; transcript parser |
 
 ## How Claude is used
 
-**One contract, every call.** Every prompt in `prompts/` ends with an `<output_format>` block that points at `src/schemas/playbook_action.json` (or, for the sentiment analyzer, its own embedded schema). The orchestrator calls the Messages API with `tools=[{"name": "emit_playbook_action", "input_schema": <that schema>}]` and `tool_choice={"type": "tool", "name": "emit_playbook_action"}`. Claude cannot return prose; it must return a conforming object. The client validates with `jsonschema`, resolves every cited evidence path against the input document **and checks the claimed value matches**, verifies communication recipients are current stakeholders, and rejects anything that fails — once with the errors fed back for a retry, then to `out/<account>/_invalid/` for manual review. A truncated response (`stop_reason: max_tokens`) is never accepted as a partial object.
+**One contract, every call.** Every prompt in `prompts/` ends with an `<output_format>` block that points at `src/schemas/playbook_action.json` (or, for the sentiment analyzer, its own embedded schema). The orchestrator calls the Messages API with `tools=[{"name": "emit_playbook_action", "input_schema": <that schema>}]` and `tool_choice={"type": "tool", "name": "emit_playbook_action"}`. Claude cannot return prose; it must return a conforming object. The client validates with `jsonschema`, resolves every cited evidence path against the input document **and checks the claimed value matches**, verifies communication recipients are current stakeholders, and rejects anything that fails, once with the errors fed back for a retry, then to `out/<account>/_invalid/` for manual review. A truncated response (`stop_reason: max_tokens`) is never accepted as a partial object.
 
 **Prompt files are versioned artifacts.** Each `.prompt` file has a YAML header (`id`, `version`, `model`, `temperature`, `max_tokens`, `variables`, `output_schema`, `description`) followed by the system prompt body, written with explicit XML sections:
 
@@ -189,4 +189,4 @@ Full trigger logic, SLAs, roles, and exit criteria: `docs/03_PLAYBOOKS_MASTER_IN
 
 * **Add a metric:** define it in `docs/02_METRICS_TAXONOMY.md`, implement in `src/models/metrics_calculator.py` and the relevant mart, add the field to `src/schemas/customer_360.json`, map its source in `skills/customer-360/references/field-sources.md`, reference it in the prompt that should reason over it.
 * **Add a playbook:** register it in `docs/03_PLAYBOOKS_MASTER_INDEX.md`, add the trigger to `orchestrator.PLAYBOOK_TRIGGERS`, write the prompt, add its `playbook_id` to the enum in `playbook_action.json`, and add a skill under `skills/` that follows `skills/customer-360/references/playbook-protocol.md`.
-* **Add a CRM:** implement the `CRMAdapter` protocol in `src/tools/clay_crm_enrichment.py` (`find_contact`, `upsert_contact`, `create_task`, `update_account_properties`). Plugin mode needs no adapter — it uses whatever connector is present.
+* **Add a CRM:** implement the `CRMAdapter` protocol in `src/tools/clay_crm_enrichment.py` (`find_contact`, `upsert_contact`, `create_task`, `update_account_properties`). Plugin mode needs no adapter: it uses whatever connector is present.

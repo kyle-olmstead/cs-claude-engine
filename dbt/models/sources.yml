@@ -13,7 +13,7 @@ sources:
       - name: crm_companies
         description: One row per account/company in the CRM.
         columns:
-          - {name: id, description: CRM record id — becomes account_id}
+          - {name: id, description: CRM record id (becomes account_id)}
           - {name: name}
           - {name: segment, description: enterprise | mid_market | smb | digital (map in staging if yours differ)}
           - {name: owner_id, description: CSM owner id}
@@ -64,7 +64,7 @@ sources:
           - {name: term_end}
           - {name: status}
       - name: billing_arr_daily
-        description: Daily ARR snapshot per account (the most important table — every revenue metric derives from it).
+        description: Daily ARR snapshot per account (the most important table; every revenue metric derives from it).
         columns:
           - {name: company_id}
           - {name: snapshot_date}

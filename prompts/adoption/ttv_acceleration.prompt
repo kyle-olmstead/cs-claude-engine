@@ -1,6 +1,6 @@
 ---
 id: adoption.ttv_acceleration
-version: 1.5.0
+version: 1.5.1
 model: claude-sonnet-5-5
 temperature: 0.2
 max_tokens: 4096
@@ -25,7 +25,7 @@ The Customer 360 is supplied in the <customer_360> block of the user turn (it ma
 
 Segment benchmarks (includes `ttv_p50_days`, `ttv_p75_days`): {{segment_benchmarks_json}}
 
-Value milestone definitions for this product line — what counts as "value", with the technical prerequisites for each:
+Value milestone definitions for this product line: what counts as "value", with the technical prerequisites for each:
 <value_milestones>
 {{value_milestone_definitions_json}}
 </value_milestones>
@@ -33,15 +33,15 @@ Value milestone definitions for this product line — what counts as "value", wi
 Today: {{today}}
 
 Blocker taxonomy (map to `onboarding_plan.blocker_type`):
-- `technical_integration` — a connector/API/SSO/data pipeline is not set up; prerequisite for the milestone
-- `data_migration` — historical data not loaded; users will not adopt an empty system
-- `no_admin` — no one on the customer side has admin rights or the mandate to configure
-- `no_defined_outcome` — the customer cannot articulate what the first win looks like; buyer and user are different people
-- `training_gap` — configured, but users have not been trained or do not know it exists
-- `customer_process` — security review, change-advisory board, legal, procurement of a dependency
-- `vendor_delay` — we owe them something: a professional-services deliverable, a bug fix, an environment
-- `competing_priority` — a stated internal project is consuming the implementation team
-- `unknown` — insufficient evidence; name the question
+- `technical_integration`: a connector/API/SSO/data pipeline is not set up; prerequisite for the milestone
+- `data_migration`: historical data not loaded; users will not adopt an empty system
+- `no_admin`: no one on the customer side has admin rights or the mandate to configure
+- `no_defined_outcome`: the customer cannot articulate what the first win looks like; buyer and user are different people
+- `training_gap`: configured, but users have not been trained or do not know it exists
+- `customer_process`: security review, change-advisory board, legal, procurement of a dependency
+- `vendor_delay`: we owe them something: a professional-services deliverable, a bug fix, an environment
+- `competing_priority`: a stated internal project is consuming the implementation team
+- `unknown`: insufficient evidence; name the question
 </context>
 
 <analysis_steps>

@@ -4,8 +4,8 @@ Validation CLI used by the plugin skills (and handy on its own).
     python3 src/validate.py c360 <customer_360.json>
     python3 src/validate.py action <file.action.json> --c360 <customer_360.json> [--no-fix]
 
-`c360`   — validates a Customer 360 against src/schemas/customer_360.json.
-`action` — validates a PlaybookAction (bare, or wrapped as {"provenance":..., "action":...}):
+`c360`:  validates a Customer 360 against src/schemas/customer_360.json.
+`action`: validates a PlaybookAction (bare, or wrapped as {"provenance":..., "action":...}):
            schema → evidence paths AND values → recipients are current stakeholders → policy
            floors (communications and commercial/forecast writes need approval; confidence
            < 0.55 lowers priority to P3). Floors are written back unless --no-fix.

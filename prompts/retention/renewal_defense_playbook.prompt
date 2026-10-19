@@ -1,6 +1,6 @@
 ---
 id: retention.renewal_defense_playbook
-version: 2.2.0
+version: 2.2.1
 model: claude-sonnet-5-5
 temperature: 0.3
 max_tokens: 6000
@@ -9,7 +9,7 @@ inputs:
   today: run:today
 cache: [system, body]
 output_schema: src/schemas/playbook_action.json
-description: Builds the renewal defense plan — scenarios, stakeholder asks, dated actions, and the customer-facing kickoff draft — from the Customer 360 and (when available) the churn_risk_rca output. Appended after core.system_csm_orchestrator.
+description: Builds the renewal defense plan (scenarios, stakeholder asks, dated actions, and the customer-facing kickoff draft) from the Customer 360 and (when available) the churn_risk_rca output. Appended after core.system_csm_orchestrator.
 playbook_ids: [PB-RET-01, PB-RET-02]
 ---
 
@@ -26,9 +26,9 @@ Segment benchmarks: {{segment_benchmarks_json}}
 Today: {{today}}
 
 Renewal scenarios (the plan must evaluate all three and recommend one):
-1. **Full renewal** — same or greater ARR, same term. Requires: health ≥ yellow, utilization ≥ 0.60 or a credible redeployment plan, an engaged economic buyer.
-2. **Right-size renewal** — reduced seats/modules to match real usage, protecting the logo and GRR partially. Requires: a usage-based justification the customer will see as fair, and a path back to growth (a pilot team, a module trial) written into the plan.
-3. **Multi-year with expansion** — longer term in exchange for adding a module/team now. Requires: green health in at least one business unit, a champion with budget influence, and an outcome the exec sponsor has publicly committed to.
+1. **Full renewal**: same or greater ARR, same term. Requires: health ≥ yellow, utilization ≥ 0.60 or a credible redeployment plan, an engaged economic buyer.
+2. **Right-size renewal**: reduced seats/modules to match real usage, protecting the logo and GRR partially. Requires: a usage-based justification the customer will see as fair, and a path back to growth (a pilot team, a module trial) written into the plan.
+3. **Multi-year with expansion**: longer term in exchange for adding a module/team now. Requires: green health in at least one business unit, a champion with budget influence, and an outcome the exec sponsor has publicly committed to.
 
 Stakeholder roles that must each have an ask (if present in `relationship.stakeholders[]`): economic buyer, champion (or successor), executive sponsor, admin/technical owner, procurement/legal (if engaged), and any detractor identified in sentiment signals.
 
@@ -44,9 +44,9 @@ Timeline anchors (relative to renewal date R): R−120 kickoff; R−90 value rev
 
 4. Build the stakeholder ask map. For every stakeholder present: what we need from them, what they get, the first touch (who on our side, which channel, by when), and the evidence that they will respond (recency of engagement, sentiment signal, persona).
 
-5. Sequence the actions against the timeline anchors. Every action has an owner role, a due-in-days, and a dependency if any. Include at minimum: value review meeting, stakeholder expansion task, proposal preparation (inputs only — not terms), procurement/legal pre-alignment if R ≤ 90, and an internal escalation if the recommended scenario is right-size or the outlook is `unlikely`.
+5. Sequence the actions against the timeline anchors. Every action has an owner role, a due-in-days, and a dependency if any. Include at minimum: value review meeting, stakeholder expansion task, proposal preparation (inputs only, not terms), procurement/legal pre-alignment if R ≤ 90, and an internal escalation if the recommended scenario is right-size or the outlook is `unlikely`.
 
-6. Define the value story inputs. List which `account.business_outcomes[]` entries have baseline and current values and which are unmeasured; for unmeasured ones specify the measurement to run before R−90. Do not compute ROI here — that is the EBR generator's job — but name what it will need.
+6. Define the value story inputs. List which `account.business_outcomes[]` entries have baseline and current values and which are unmeasured; for unmeasured ones specify the measurement to run before R−90. Do not compute ROI here (that is the EBR generator's job), but name what it will need.
 
 7. Draft the kickoff communication to the economic buyer (or exec sponsor if no economic buyer is engaged): propose the value review, name the date window, one clear ask. If the RCA driver is `champion_loss`, draft instead to the exec sponsor requesting the successor and the review together.
 
@@ -54,7 +54,7 @@ Timeline anchors (relative to renewal date R): R−120 kickoff; R−90 value rev
 </analysis_steps>
 
 <guardrails>
-- Never propose, imply, or draft pricing, discounts, credits, free months, or term changes. "Prepare proposal inputs" means the usage facts, the outcome facts, and the scenario — never numbers for the paper.
+- Never propose, imply, or draft pricing, discounts, credits, free months, or term changes. "Prepare proposal inputs" means the usage facts, the outcome facts, and the scenario, never numbers for the paper.
 - Never state renewal probability as a number. Bands only.
 - Never draft to a contact flagged as departed, nor to a procurement contact before the economic buyer has been engaged in this plan.
 - Do not propose more than one customer meeting per stakeholder in the first 14 days; respect their time.

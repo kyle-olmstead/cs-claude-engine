@@ -20,13 +20,13 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 
 ## When it applies
 
-Standalone: `health.band != "red"`, `contract.days_to_renewal > 120`, and either `usage.feature_depth_30d ≤ benchmarks.feature_depth_green_median − 0.15` or `usage.utilization_drift_90d ≤ −0.10`. As a sub-step: whenever `ebr-generator` or `expansion-whitespace` calls for it — then emit only the narrative, the ranked list, and `expansion_fit_notes`, no enablement communications.
+Standalone: `health.band != "red"`, `contract.days_to_renewal > 120`, and either `usage.feature_depth_30d ≤ benchmarks.feature_depth_green_median − 0.15` or `usage.utilization_drift_90d ≤ −0.10`. As a sub-step: whenever `ebr-generator` or `expansion-whitespace` calls for it; then emit only the narrative, the ranked list, and `expansion_fit_notes`, no enablement communications.
 
 If the account has no usage data (`data_quality_flags` contains `usage_unavailable`), stop and say the audit needs `~~product analytics` or `~~data warehouse`; offer `customer-360` once one is connected.
 
 ## Inputs beyond the Customer 360
 
-`feature_catalog_json` — the feature catalog with `retention_lift`, `prerequisites`, `target_personas`, `enablement_assets`, `module`. Source order: a catalog the user maintains in `~~documents` (ask once, remember the path in the stack profile) → `~~product analytics` feature taxonomy with the engine's default lift values → the plugin default `DEFAULT_FEATURE_CATALOG` in `${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py`. State which was used; with the default catalog, say that lift values are illustrative until replaced with the user's own renewal-controlled numbers (method in `docs/02_METRICS_TAXONOMY.md` §B4).
+`feature_catalog_json`: the feature catalog with `retention_lift`, `prerequisites`, `target_personas`, `enablement_assets`, `module`. Source order: a catalog the user maintains in `~~documents` (ask once, remember the path in the stack profile) → `~~product analytics` feature taxonomy with the engine's default lift values → the plugin default `DEFAULT_FEATURE_CATALOG` in `${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py`. State which was used; with the default catalog, say that lift values are illustrative until replaced with the user's own renewal-controlled numbers (method in `docs/02_METRICS_TAXONOMY.md` §B4).
 
 ## Prompt
 
@@ -35,8 +35,8 @@ If the account has no usage data (`data_quality_flags` contains `usage_unavailab
 ## Artifacts
 
 - `PB-ADP-02.feature_depth_audit.action.json` with the `feature_audit` block
-- `PB-ADP-02.feature_audit.md` — position vs peers, ranked recommendations with fit factors, fading features, the narrative, and expansion-fit notes
-- `PB-ADP-02.feature_depth_audit.comm_<n>.md` — up to two enablement emails (approval required); in-app nudges go in the action as `digital_nudge` entries, not as communications
+- `PB-ADP-02.feature_audit.md`: position vs peers, ranked recommendations with fit factors, fading features, the narrative, and expansion-fit notes
+- `PB-ADP-02.feature_depth_audit.comm_<n>.md`: up to two enablement emails (approval required); in-app nudges go in the action as `digital_nudge` entries, not as communications
 
 ## Proposed writes
 

@@ -1,10 +1,10 @@
-# Playbook PB-EXP-01 — Low-Touch Digital Expansion
+# Playbook PB-EXP-01: Low-Touch Digital Expansion
 
-> **In plain English.** How to grow hundreds of small accounts you can't call individually. The engine finds the ones already outgrowing their plan — more people active than seats bought, users bumping into features they don't have — and sends one honest, evidence-based nudge, never more than two in two weeks, and never to an account with an open problem. Bigger opportunities get handed to a person. §7 (what a nudge is allowed to say) is the part worth reading even if you never run the playbook.
+> **In plain English.** How to grow hundreds of small accounts you can't call individually. The engine finds the ones already outgrowing their plan (more people active than seats bought, users bumping into features they don't have) and sends one honest, evidence-based nudge, never more than two in two weeks, and never to an account with an open problem. Bigger opportunities get handed to a person. §7 (what a nudge is allowed to say) is the part worth reading even if you never run the playbook.
 
 **Pillar:** Expansion · **Priority:** P3 (P2 when a `now` play is ≥ 20% of current ARR) · **Cooldown:** 30 days · **Owner:** Digital programs (CSM pooled); sales-assist above threshold · **Prompt chain:** `expansion.whitespace_expansion_finder` (+ `adoption.feature_depth_audit` as a sub-step when feature-gate hits are the trigger)
 
-This playbook finds expansion that is already happening in the product and turns it into contracted ARR without a human touch until one is warranted. It runs across the SMB and digital segments — hundreds or thousands of accounts per CSM — so every step is automated by default and a human enters only when the indicative ARR crosses the sales-assist threshold or the customer replies.
+This playbook finds expansion that is already happening in the product and turns it into contracted ARR without a human touch until one is warranted. It runs across the SMB and digital segments (hundreds or thousands of accounts per CSM) so every step is automated by default and a human enters only when the indicative ARR crosses the sales-assist threshold or the customer replies.
 
 The discipline that keeps it from becoming spam: **no play without usage evidence**, **no more than two asks per account per 14 days**, and **no expansion on an account with any red flag**. The engine is as careful about *not* firing as it is about firing.
 
@@ -35,7 +35,7 @@ Any one of the following, for `account.segment ∈ {smb, digital}` and `health.b
 | ≥ threshold | **Sales-assist**: same digital nudges + `sales_handoff` record to the pooled CSM/AE queue | One 20-minute discovery call within 15 business days |
 | Any play with `play_type ∈ {business_unit_expansion, geo_expansion}` | Always sales-assist | Human qualifies the sponsor |
 
-Digital nudges are `actions[]` of type `digital_nudge` and are the only engine outputs that execute without human approval — and only when `channel == "in_app"` and the segment is `digital`. Email nudges in SMB require approval of the template once per quarter, not per send (CS Ops approves the template; the engine fills the variables).
+Digital nudges are `actions[]` of type `digital_nudge` and are the only engine outputs that execute without human approval, and only when `channel == "in_app"` and the segment is `digital`. Email nudges in SMB require approval of the template once per quarter, not per send (CS Ops approves the template; the engine fills the variables).
 
 ---
 
@@ -119,8 +119,8 @@ out/acc_digital_8841/PB-EXP-01.comm_1.md   (SMB email nudge or sales-assist spon
 
 ## 7. Nudge copy standards (enforced by the prompt, reviewed quarterly by digital programs)
 
-* **Evidence-led.** The nudge states the specific thing the customer did ("Your team has 23 people active on 20 seats", "4 people tried to set up SSO this week") — never generic ("Unlock more with Pro!").
-* **One CTA.** "Add 5 seats" or "Start SSO setup" — not both.
+* **Evidence-led.** The nudge states the specific thing the customer did ("Your team has 23 people active on 20 seats", "4 people tried to set up SSO this week"), never generic ("Unlock more with Pro!").
+* **One CTA.** "Add 5 seats" or "Start SSO setup", not both.
 * **No urgency theater.** No countdowns, no "offer ends", no scarcity. The urgency is theirs (they are hitting the ceiling), not ours.
 * **Exit path.** Every in-app nudge has a "not now" that suppresses the play for 30 days and a "talk to someone" that routes to sales-assist regardless of threshold.
 * **Tone.** Second person, present tense, under 50 words for in-app, under 120 for email.
@@ -178,10 +178,10 @@ Example (generated for a digital account with utilization 1.15 and gate hits on 
 **Readiness:** ready; no blocking conditions; evidence `health.band`, `support.open_tickets` (empty), `contract.payment_days_past_due` (0).
 
 **Plays:**
-1. `seat_expansion`, now, likely — target seats = max(23 × 1.15, 20 × 1.25) = 26.5 → 30 (pack of 5) → +10 seats × $480 = $4,800 indicative (sizing_confidence high; basis shown).
-2. `tier_upgrade` to Business, now, likely — (840 − 480) × 30 = $10,800 indicative; evidence gate hits on two Business-gated features; sponsor: the admin.
+1. `seat_expansion`, now, likely: target seats = max(23 × 1.15, 20 × 1.25) = 26.5 → 30 (pack of 5) → +10 seats × $480 = $4,800 indicative (sizing_confidence high; basis shown).
+2. `tier_upgrade` to Business, now, likely: (840 − 480) × 30 = $10,800 indicative; evidence gate hits on two Business-gated features; sponsor: the admin.
 3. No module or BU play (no evidence).
 
-**Total indicative** $15,600; weighted $9,360. Above the $12k digital sales-assist threshold → sales handoff recommended, `ae_notes`: "Over-deployed by 3 seats and actively hitting SSO/API gates; admin engaged this week; NPS 9. Lead with the SSO setup they already tried. do_not_say: none." Actions: `digital_nudge` (in-app, copy as in §7), `crm_write` `expansion_candidate = true`, `sales_handoff` (approval), `opportunity_suggestion` "Brightline — Business tier + 10 seats, $14–16k, close within 45 days". One sponsor email draft to the admin (approval). Confidence 0.86.
+**Total indicative** $15,600; weighted $9,360. Above the $12k digital sales-assist threshold → sales handoff recommended, `ae_notes`: "Over-deployed by 3 seats and actively hitting SSO/API gates; admin engaged this week; NPS 9. Lead with the SSO setup they already tried. do_not_say: none." Actions: `digital_nudge` (in-app, copy as in §7), `crm_write` `expansion_candidate = true`, `sales_handoff` (approval), `opportunity_suggestion` "Brightline: Business tier + 10 seats, $14–16k, close within 45 days". One sponsor email draft to the admin (approval). Confidence 0.86.
 
 **What happened (illustrative, not a customer result):** The admin clicked "Talk to someone" on the in-app nudge on day 1. Pooled CSM held a 20-minute call on day 4; upgraded to Business with 30 seats on day 9 at $25,200 ARR (the customer chose 30 seats over the suggested 26). Outcome `expanded`; NRR contribution +$15,600.

@@ -467,7 +467,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     summary = orch.run_batch(Path(args.input), args.account_id, args.playbook) if args.batch else orch.run(Path(args.input), args.account_id, args.playbook, args.concurrency)
     print(json.dumps({k: v for k, v in summary.items() if k != "actions"}, indent=2))
-    print(f"{len(summary['actions'])} action(s) written under {args.out}/ — see run_summary.json")
+    print(f"{len(summary['actions'])} action(s) written under {args.out}/; see run_summary.json")
     return 0 if not summary["errors"] else 1
 
 

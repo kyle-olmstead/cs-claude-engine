@@ -1,6 +1,6 @@
-# 01 — Architecture
+# 01: Architecture
 
-> **In plain English.** How the engine is built, in five layers: where data comes from, how it's cleaned, how the account picture is assembled, how Claude reasons about it, and how actions get back into your tools — plus the feedback loop that keeps the health score honest. If you're not an engineer, read the table in §0 and stop; it tells you the two ways the engine can run and which one you're on.
+> **In plain English.** How the engine is built, in five layers: where data comes from, how it's cleaned, how the account picture is assembled, how Claude reasons about it, and how actions get back into your tools, plus the feedback loop that keeps the health score honest. If you're not an engineer, read the table in §0 and stop; it tells you the two ways the engine can run and which one you're on.
 
 CS-Claude Engine is a five-layer system. Each layer has a single responsibility, a typed interface to the next, and can be replaced independently. This document specifies every layer, the data contracts between them, the MCP server, the deployment topology, and the security model.
 
@@ -14,7 +14,7 @@ The same prompts, schemas, scoring code, and playbook logic run in two environme
 |---|---|---|
 | Runtime | Claude itself, inside a user's Claude account (app, Cowork, or Claude Code), with the repo installed as a plugin | A Python process (`src/orchestrator.py`) on a schedule, calling the Messages API |
 | L0 sources | The user's **connectors** (MCP tools for HubSpot/Salesforce, Zendesk, Gong/Zoom, Amplitude, Clay, Slack, Gmail, Drive…) as discovered by the `cs-setup` skill and recorded in the stack profile | ELT into a warehouse |
-| L1 transform | None persisted — the `customer-360` skill assembles the document in-session per `skills/customer-360/references/field-sources.md`; history is kept in `cs-engine/accounts/<id>/history/` in the user's working folder | dbt marts |
+| L1 transform | None persisted: the `customer-360` skill assembles the document in-session per `skills/customer-360/references/field-sources.md`; history is kept in `cs-engine/accounts/<id>/history/` in the user's working folder | dbt marts |
 | L2 assembly | The skill, writing `customer_360.json` and running `health_score.py` + `validate.py` as bundled scripts | The orchestrator |
 | L3 intelligence | Claude reasons directly from the prompt files, following the same `<analysis_steps>` and `<guardrails>`; outputs the same `PlaybookAction` schema | Messages API with forced `tool_use` |
 | L4 action | Proposed writes presented to the user; executed through the connectors only on approval, in-conversation | Adapters + approval queue |
@@ -68,7 +68,7 @@ The sections below describe server mode in full; where plugin mode differs it is
 
 ---
 
-## 2. L0 — Sources and the canonical identity model
+## 2. L0: Sources and the canonical identity model
 
 Everything joins on two keys:
 
@@ -98,12 +98,12 @@ Everything joins on two keys:
 
 ---
 
-## 3. L1 — Warehouse and dbt
+## 3. L1: Warehouse and dbt
 
 ### 3.1 Model layering
 
 * **Staging (`stg_`)**: rename, cast, dedupe, nothing else. One model per source table.
-* **Intermediate (`int_`)**: conformed, cross-source joins. `int_arr_daily_snapshot` is the single most important model in the system — every revenue metric derives from it. It must be built as a *daily* snapshot (not month-end only) so that any cohort window can be computed without re-deriving history.
+* **Intermediate (`int_`)**: conformed, cross-source joins. `int_arr_daily_snapshot` is the single most important model in the system: every revenue metric derives from it. It must be built as a *daily* snapshot (not month-end only) so that any cohort window can be computed without re-deriving history.
 * **Marts (`mart_`)**: consumer-facing, one row per business grain, materialized incrementally.
 
 ### 3.2 The two shipped marts
@@ -111,11 +111,11 @@ Everything joins on two keys:
 | Mart | Grain | Refresh | Consumers |
 |---|---|---|---|
 | `mart_customer_health_daily` | account × as_of_date | Daily 03:00 UTC, incremental on `(account_id, as_of_date)` | Customer 360 builder, BI, alerting |
-| `mart_retention_nrr_grr` | period_month × segment (incl. `ALL`) | Daily (cheap) — recomputes last 3 months, full refresh monthly | Board reporting, orchestrator context block, EBR generator |
+| `mart_retention_nrr_grr` | period_month × segment (incl. `ALL`) | Daily (cheap): recomputes last 3 months, full refresh monthly | Board reporting, orchestrator context block, EBR generator |
 
 ### 3.3 Health score: SQL and Python must agree
 
-`mart_customer_health_daily` computes the health score in SQL for BI and alerting; `src/models/health_score.py` recomputes it in Python inside the orchestrator so Claude's explanation refers to component contributions identical to what the dashboard shows. The weights live in one place — `config/health_weights.json` — and `scripts/sync_health_weights.py --write` copies them into `dbt_project.yml`'s `vars.health_weights` (`--check` runs in CI so the two cannot drift). Two guards enforce agreement:
+`mart_customer_health_daily` computes the health score in SQL for BI and alerting; `src/models/health_score.py` recomputes it in Python inside the orchestrator so Claude's explanation refers to component contributions identical to what the dashboard shows. The weights live in one place (`config/health_weights.json`) and `scripts/sync_health_weights.py --write` copies them into `dbt_project.yml`'s `vars.health_weights` (`--check` runs in CI so the two cannot drift). Two guards enforce agreement:
 
 * `scripts/check_parity.py` rebuilds the scorer's inputs from the latest mart row per account and fails if any score differs by more than 0.5 points. CI runs it after `dbt build` on the bundled seeds (current delta: 0.000 across the three seeded accounts).
 * At run time the orchestrator asserts the Python score equals `health.mart_score` within 0.5 and records a `drift_error` on the account otherwise.
@@ -128,7 +128,7 @@ dbt/
 ├── profiles.yml             dev = local DuckDB; snowflake / bigquery / postgres templates
 ├── models/
 │   ├── sources.yml          the 14 upstream tables, column by column
-│   ├── staging/             14 stg_*/int_* models — the only place raw column names appear
+│   ├── staging/             14 stg_*/int_* models: the only place raw column names appear
 │   └── marts/               mart_customer_health_daily, mart_retention_nrr_grr (+ schema tests)
 ├── macros/                  median_of, cse_incremental_strategy (date math uses dbt's own cross-db macros)
 ├── seeds/                   synthetic history for three accounts so the project builds with no warehouse
@@ -159,28 +159,28 @@ where h.as_of_date = current_date;
 
 ---
 
-## 4. L2 — Assembly
+## 4. L2: Assembly
 
 `src/orchestrator.py` is the entry point. Its responsibilities, in order:
 
-1. **Load feed** — `.json`, `.jsonl`, or a directory of either. Each document is validated against `src/schemas/customer_360.json`. Invalid documents are written to `out/_rejected/` with the validation error and skipped; the run continues.
-2. **Enrich (optional)** — if `CLAY_WEBHOOK_URL` is set and the document's `stakeholders[]` has anyone with `enrichment_stale: true`, push them to Clay and merge the callback results. Champion job-change detection runs here (`clay_crm_enrichment.detect_champion_change`).
-3. **Parse conversations (optional)** — any `conversations[]` entry with a `transcript_uri` and no `sentiment` block is parsed by `call_transcript_parser` and the resulting signals are merged into `sentiment.transcript_signals[]`.
-4. **Recompute health** — `health_score.compute_health_score` runs; result is compared against the mart's score (drift guard, §3.3) and attached as `health.components[]` for Claude's explainability.
-5. **Evaluate triggers** — `PLAYBOOK_TRIGGERS` (a list of `(playbook_id, predicate)` pairs) is evaluated against the document. Multiple playbooks can fire; they are ordered by priority (retention > adoption > expansion > cadence) and de-duplicated against the `actions_last_30d[]` block so the same account is not hammered.
-6. **Call Claude** — per fired playbook, build the prompt (§5), call the Messages API, validate the `PlaybookAction`.
-7. **Route** — hand each action to `ActionRouter` which writes files in dry-run or calls adapters in live mode.
-8. **Summarize** — `run_summary.json` with every action, priority, confidence, and whether it awaits approval.
+1. **Load feed**: `.json`, `.jsonl`, or a directory of either. Each document is validated against `src/schemas/customer_360.json`. Invalid documents are written to `out/_rejected/` with the validation error and skipped; the run continues.
+2. **Enrich (optional)**: if `CLAY_WEBHOOK_URL` is set and the document's `stakeholders[]` has anyone with `enrichment_stale: true`, push them to Clay and merge the callback results. Champion job-change detection runs here (`clay_crm_enrichment.detect_champion_change`).
+3. **Parse conversations (optional)**: any `conversations[]` entry with a `transcript_uri` and no `sentiment` block is parsed by `call_transcript_parser` and the resulting signals are merged into `sentiment.transcript_signals[]`.
+4. **Recompute health**: `health_score.compute_health_score` runs; result is compared against the mart's score (drift guard, §3.3) and attached as `health.components[]` for Claude's explainability.
+5. **Evaluate triggers**: `PLAYBOOK_TRIGGERS` (a list of `(playbook_id, predicate)` pairs) is evaluated against the document. Multiple playbooks can fire; they are ordered by priority (retention > adoption > expansion > cadence) and de-duplicated against the `actions_last_30d[]` block so the same account is not hammered.
+6. **Call Claude**: per fired playbook, build the prompt (§5), call the Messages API, validate the `PlaybookAction`.
+7. **Route**: hand each action to `ActionRouter` which writes files in dry-run or calls adapters in live mode.
+8. **Summarize**: `run_summary.json` with every action, priority, confidence, and whether it awaits approval.
 
 Concurrency: accounts are independent, so the orchestrator uses a `ThreadPoolExecutor` sized by `CSE_CONCURRENCY` (default 8). Anthropic rate limits are respected via exponential backoff on 429/529 with jitter; the SDK's built-in retry handles transient 5xx.
 
 ---
 
-## 5. L3 — Intelligence
+## 5. L3: Intelligence
 
 ### 5.1 Prompt registry (`src/prompts.py`)
 
-`prompts/**/*.prompt` files are loaded at startup. A file is a YAML header between `---` fences followed by the prompt body. The header declares the prompt's **inputs** — every `{{variable}}` the body uses, each with a source spec the orchestrator resolves generically:
+`prompts/**/*.prompt` files are loaded at startup. A file is a YAML header between `---` fences followed by the prompt body. The header declares the prompt's **inputs**: every `{{variable}}` the body uses, each with a source spec the orchestrator resolves generically:
 
 ```yaml
 id: adoption.feature_depth_audit
@@ -228,7 +228,7 @@ For nightly runs, `--batch` submits every first-stage prompt through the Message
 1. Checks `stop_reason`. A `max_tokens` stop never yields a partial object: the request is retried once with 1.5× headroom and a tightening instruction (prompts carry a "length discipline" block for exactly this).
 2. Validates against the sliced JSON Schema (`jsonschema.Draft202012Validator`).
 3. Verifies every `evidence[].source_path` resolves inside the view **and that the claimed `value` matches the document's value** (numeric within 1%, strings case-insensitive). A real path with a wrong number is the most plausible hallucination channel; this closes it. More than two unresolvable paths fails the action.
-4. Verifies every `communications[].recipient_contact_id` (and cc) is a current stakeholder — present in `relationship.stakeholders[]` and not departed.
+4. Verifies every `communications[].recipient_contact_id` (and cc) is a current stakeholder: present in `relationship.stakeholders[]` and not departed.
 5. Feeds failures back once as a `tool_result` with `is_error: true` and the error list; on a second failure the attempts are written to `out/<account_id>/_invalid/` for manual review, as the playbook index promises.
 6. Applies the policy floors in code (`enforce_policy`): every communication and every forecast/commercial CRM write → `requires_human_approval: true`; `confidence < 0.55` → priority P3. Each change is recorded in `data_quality_flags` with a `policy:` prefix; free-text fields are never mutated.
 7. Attaches provenance: `prompt_id`, `prompt_version`, `model`, `input_sha256`, `request_id`, token usage, `stop_reason`, policy changes.
@@ -254,15 +254,15 @@ The same capabilities are exposed as an MCP server (`cse-mcp`) so Claude can be 
 | `explain_health` | `{account_id}` | `health.components[]` with contributions and 30/90-day deltas | none |
 | `query_mart` | `{mart, filters, limit}` (allowlisted marts, read-only) | rows | none |
 | `run_playbook` | `{account_id, playbook_id, dry_run=true}` | `PlaybookAction` | writes to `out/` only unless `dry_run=false` **and** the caller has the `cse:execute` scope |
-| `draft_communication` | `{account_id, type, recipient_contact_id, intent}` | `{subject, body_markdown, tone_notes}` | none — drafts are returned, never sent |
-| `create_crm_task` | `{account_id, title, due_date, owner_id, body}` | `{task_id}` | **write** — requires approval scope |
+| `draft_communication` | `{account_id, type, recipient_contact_id, intent}` | `{subject, body_markdown, tone_notes}` | none: drafts are returned, never sent |
+| `create_crm_task` | `{account_id, title, due_date, owner_id, body}` | `{task_id}` | **write**: requires approval scope |
 | `log_outcome` | `{action_id, outcome, notes}` | `{ok}` | **write** to `action_outcomes` |
 
 ### 6.2 Resources
 
-* `cse://metrics/taxonomy` — the contents of `docs/02_METRICS_TAXONOMY.md`
-* `cse://playbooks/index` — the contents of `docs/03_PLAYBOOKS_MASTER_INDEX.md`
-* `cse://prompts/{id}` — any registered prompt body, read-only
+* `cse://metrics/taxonomy`: the contents of `docs/02_METRICS_TAXONOMY.md`
+* `cse://playbooks/index`: the contents of `docs/03_PLAYBOOKS_MASTER_INDEX.md`
+* `cse://prompts/{id}`: any registered prompt body, read-only
 
 ### 6.3 Authorization
 
@@ -270,7 +270,7 @@ The MCP server authenticates the connecting user and maps them to a `csm_id` and
 
 ---
 
-## 7. L4 — Action layer
+## 7. L4: Action layer
 
 ### 7.1 The approval gate
 
@@ -302,7 +302,7 @@ Claude drafts; humans send. `communication` actions produce a `.md` file with YA
 
 ---
 
-## 8. L5 — Feedback
+## 8. L5: Feedback
 
 ### 8.1 Outcome logging
 
@@ -312,9 +312,9 @@ Claude drafts; humans send. `communication` actions produce a `.md` file with YA
 
 Quarterly, a notebook joins `action_outcomes` to `mart_retention_nrr_grr` and `mart_customer_health_daily` and answers:
 
-* **Health score calibration** — for accounts scored red 90 days before renewal, what fraction churned? Target: red cohort churn ≥ 3× green cohort churn. If not, component weights are re-fit by logistic regression on the trailing 4 quarters and proposed as a PR to `dbt_project.yml`.
-* **Trigger precision** — for each playbook, what share of fired triggers led to an action the CSM approved (not rejected)? Triggers below 40% approval are tightened.
-* **Prompt drift** — eval harness scores by prompt version over time.
+* **Health score calibration**: for accounts scored red 90 days before renewal, what fraction churned? Target: red cohort churn ≥ 3× green cohort churn. If not, component weights are re-fit by logistic regression on the trailing 4 quarters and proposed as a PR to `dbt_project.yml`.
+* **Trigger precision**: for each playbook, what share of fired triggers led to an action the CSM approved (not rejected)? Triggers below 40% approval are tightened.
+* **Prompt drift**: eval harness scores by prompt version over time.
 
 ### 8.3 Drift alarms
 

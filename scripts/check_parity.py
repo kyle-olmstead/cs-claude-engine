@@ -10,7 +10,7 @@ src/models/health_score.py, and fails if any account differs by more than the to
     python3 scripts/check_parity.py --jsonl mart_rows.jsonl   # rows exported from any warehouse
 
 Exit 0 when every account matches, 1 otherwise. Run it in CI after `dbt build`, and in
-production after the nightly mart build — it catches normalizer drift the day it happens.
+production after the nightly mart build: it catches normalizer drift the day it happens.
 """
 
 from __future__ import annotations

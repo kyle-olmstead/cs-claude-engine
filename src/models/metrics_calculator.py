@@ -1,5 +1,5 @@
 """
-Retention, adoption, sentiment, and capacity metrics — the Python mirror of
+Retention, adoption, sentiment, and capacity metrics: the Python mirror of
 docs/02_METRICS_TAXONOMY.md.
 
 Every function is pure, typed, and stdlib-only so it can run inside the orchestrator,
@@ -102,7 +102,7 @@ def cohort_retention(
     """
     Compute the full retention decomposition for the cohort of accounts with ARR > 0 at t0.
 
-    Accounts present at t1 but absent (or 0) at t0 are new logos — reported but excluded
+    Accounts present at t1 but absent (or 0) at t0 are new logos: reported but excluded
     from NRR/GRR per the taxonomy. Accounts in the cohort absent from t1 are treated as churned.
     """
     start = {s.account_id: s.arr for s in t0 if s.arr > 0}

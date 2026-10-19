@@ -101,9 +101,9 @@ def redact_pii(text: str) -> str:
 
 def _role_for(speaker: str, email: Optional[str], internal_domains: Sequence[str], internal_names: Sequence[str]) -> str:
     """
-    internal  — email on an internal domain, name in the internal roster, or an [INTERNAL] marker
-    customer  — everyone else, *when* we were given any way to recognize internal people
-    unknown   — no email and no internal roster/domains supplied at all (caller must tag by hand)
+    internal: email on an internal domain, name in the internal roster, or an [INTERNAL] marker
+    customer: everyone else, *when* we were given any way to recognize internal people
+    unknown:  no email and no internal roster/domains supplied at all (caller must tag by hand)
     """
     if email:
         domain = email.lower().rsplit("@", 1)[-1]
@@ -267,7 +267,7 @@ def chunk_transcript(t: Transcript, max_tokens: int = CHUNK_TOKENS) -> List[List
         size += n
     if cur:
         chunks.append(cur)
-    # drop chunks with no customer speech at all — nothing to analyze
+    # drop chunks with no customer speech at all: nothing to analyze
     return [c for c in chunks if any(u.role != "internal" for u in c)] or chunks[:1]
 
 

@@ -1,5 +1,5 @@
 """
-Playbook triggers — the single executable definition of "when X happens, run Y".
+Playbook triggers: the single executable definition of "when X happens, run Y".
 
 `PLAYBOOKS` is the registry. `evaluate_triggers` applies it to one Customer 360 with the
 precedence rules (P0 retention suppresses P3 expansion; RET-01 subsumes RET-02), opt-outs,
@@ -195,5 +195,5 @@ def registry_table() -> str:
     rows = ["| id | name | priority | cooldown | trigger (any) | prompt chain | primary artifact |", "|---|---|---|---|---|---|---|"]
     for p in PLAYBOOKS:
         rows.append(f"| {p.playbook_id} | {p.name} | {p.priority} | {p.cooldown_days}d | {p.trigger_summary} | {' → '.join(p.prompt_chain)} | {p.primary_artifact} |")
-    rows.append("| ADHOC | Ad hoc analysis | — | — | user request | any | as requested |")
+    rows.append("| ADHOC | Ad hoc analysis | none | none | user request | any | as requested |")
     return "\n".join(rows)

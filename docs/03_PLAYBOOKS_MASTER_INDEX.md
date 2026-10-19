@@ -1,6 +1,6 @@
-# 03 — Playbooks Master Index
+# 03: Playbooks Master Index
 
-> **In plain English.** A playbook is "when X happens, do Y." This is the list of X's the engine watches for — an account turning red, a champion leaving, a renewal approaching, onboarding stalling, a customer outgrowing their plan, a business review coming due — and the Y it does for each: what it produces, who owns the outcome, how fast, and how we know it's finished. The registry table is the whole story; the sections below are the detail.
+> **In plain English.** A playbook is "when X happens, do Y." This is the list of X's the engine watches for (an account turning red, a champion leaving, a renewal approaching, onboarding stalling, a customer outgrowing their plan, a business review coming due) and the Y it does for each: what it produces, who owns the outcome, how fast, and how we know it's finished. The registry table is the whole story; the sections below are the detail.
 
 The registry of every automated loop the engine runs. For each playbook: the trigger predicates the orchestrator evaluates, the prompts it chains, the artifacts it produces, who owns the outcome, the SLA, and the exit condition that closes the loop. Trigger predicates are written in the same pseudo-syntax the orchestrator's `PLAYBOOK_TRIGGERS` table implements; field names are JSON paths into the Customer 360.
 
@@ -23,7 +23,7 @@ Priority order when multiple playbooks fire on one account in one run: **P0 rete
 
 ---
 
-## A. `PB-RET-01` — Enterprise at-risk turnaround
+## A. `PB-RET-01`: Enterprise at-risk turnaround
 
 Full operating detail lives in `playbooks/enterprise_at_risk_turnaround.md`. Registry entry:
 
@@ -48,7 +48,7 @@ OR sentiment.ecri >= 60
 
 ---
 
-## B. `PB-RET-02` — Renewal defense (standard)
+## B. `PB-RET-02`: Renewal defense (standard)
 
 **Trigger:**
 ```
@@ -65,8 +65,8 @@ python -m src.orchestrator --input feeds/ --account-id <id> --playbook PB-RET-02
 ```
 
 **Artifacts:**
-* `renewal_plan.md` — renewal probability band (not a number — a band, with evidence), the three scenarios (full renew / right-size / multi-year with expansion), the ask of each stakeholder, the dates.
-* `comm_renewal_kickoff.md` — draft to economic buyer proposing the renewal review meeting (approval required).
+* `renewal_plan.md`: renewal probability band (not a number but a band, with evidence), the three scenarios (full renew / right-size / multi-year with expansion), the ask of each stakeholder, the dates.
+* `comm_renewal_kickoff.md`: draft to economic buyer proposing the renewal review meeting (approval required).
 * CRM: renewal opportunity `cse_scenario` property set to the recommended scenario; task "Renewal kickoff meeting" due within 10 days.
 
 **Owner / SLA:** CSM; kickoff meeting held by day 90 pre-renewal.
@@ -75,7 +75,7 @@ python -m src.orchestrator --input feeds/ --account-id <id> --playbook PB-RET-02
 
 ---
 
-## C. `PB-ADP-01` — TTV acceleration
+## C. `PB-ADP-01`: TTV acceleration
 
 **Trigger:**
 ```
@@ -87,8 +87,8 @@ AND lifecycle.value_milestones_reached == []
 **Prompt:** `adoption.ttv_acceleration`.
 
 **Artifacts:**
-* `ttv_unblock_plan.md` — the blocking step (technical / people / process), the owner on each side, the three next actions with dates, the revised milestone date.
-* `comm_onboarding_checkin.md` — draft to the admin/champion (approval required).
+* `ttv_unblock_plan.md`: the blocking step (technical / people / process), the owner on each side, the three next actions with dates, the revised milestone date.
+* `comm_onboarding_checkin.md`: draft to the admin/champion (approval required).
 * CRM: `onboarding_risk = true`; task to implementation owner.
 * If the blocker is classified `technical_integration` the action also opens a support ticket draft tagged `onboarding-blocker`.
 
@@ -98,7 +98,7 @@ AND lifecycle.value_milestones_reached == []
 
 ---
 
-## D. `PB-ADP-02` — Feature depth remediation
+## D. `PB-ADP-02`: Feature depth remediation
 
 **Trigger:**
 ```
@@ -111,8 +111,8 @@ AND contract.days_to_renewal > 120
 **Prompt:** `adoption.feature_depth_audit`.
 
 **Artifacts:**
-* `feature_audit.md` — unused high-lift features ranked by retention lift × fit, with the user persona that should adopt each, and the enablement asset to send.
-* `comm_enablement_nudge.md` — one email or in-app message per top-2 feature (approval required for email; in-app nudges are auto-queued to the digital platform with `requires_human_approval=false` only for the digital segment).
+* `feature_audit.md`: unused high-lift features ranked by retention lift × fit, with the user persona that should adopt each, and the enablement asset to send.
+* `comm_enablement_nudge.md`: one email or in-app message per top-2 feature (approval required for email; in-app nudges are auto-queued to the digital platform with `requires_human_approval=false` only for the digital segment).
 * CRM: task "Enablement session: <feature>".
 
 **Owner / SLA:** CSM (enterprise/MM) or digital programs (SMB/digital); 10 business days.
@@ -121,7 +121,7 @@ AND contract.days_to_renewal > 120
 
 ---
 
-## E. `PB-CAD-01` — QBR / EBR automation
+## E. `PB-CAD-01`: QBR / EBR automation
 
 **Purpose.** Turn usage data, business outcomes, and ROI into an executive-grade narrative and slide-by-slide script, so the CSM spends their time on the conversation instead of the deck.
 
@@ -135,8 +135,8 @@ OR instruction == "generate_ebr"   # on-demand via MCP run_playbook
 **Prompt chain:** `adoption.feature_depth_audit` (to produce the adoption narrative and the "what's next" section) → `expansion.executive_ebr_generator`.
 
 **Inputs assembled by the orchestrator beyond the Customer 360:**
-* `retention_context_json` — the account's segment row from `mart_retention_nrr_grr` (so the deck can say "you are in the top quartile of customers like you").
-* `roi_inputs_json` — the account's stated business outcomes from the CRM (`account.business_outcomes[]`: outcome, baseline, current, unit, source) and the ROI model parameters (`loaded_hourly_rate`, `hours_saved_per_workflow`, etc.) maintained by the CS Ops team.
+* `retention_context_json`: the account's segment row from `mart_retention_nrr_grr` (so the deck can say "you are in the top quartile of customers like you").
+* `roi_inputs_json`: the account's stated business outcomes from the CRM (`account.business_outcomes[]`: outcome, baseline, current, unit, source) and the ROI model parameters (`loaded_hourly_rate`, `hours_saved_per_workflow`, etc.) maintained by the CS Ops team.
 * `benchmarks_json`.
 
 **Claude execution:**
@@ -167,7 +167,7 @@ python -m src.orchestrator --input feeds/ --account-id <id> --playbook PB-CAD-01
 
 ---
 
-## F. `PB-EXP-02` — Enterprise whitespace discovery
+## F. `PB-EXP-02`: Enterprise whitespace discovery
 
 **Trigger:**
 ```
@@ -188,7 +188,7 @@ AND NOT exists(opportunities[] where type in ("expansion","upsell","cross_sell")
 
 ---
 
-## G. `PB-OPS-01` — Portfolio rebalance note (advisory)
+## G. `PB-OPS-01`: Portfolio rebalance note (advisory)
 
 Deterministic, no Claude call. Runs once per orchestrator run across the whole feed.
 
@@ -198,7 +198,7 @@ csm.book_arr > benchmarks[csm.primary_segment].arr_per_csm_target * 1.15
 AND count(accounts where csm_owner_id == csm.id and health.band == "red") >= 2
 ```
 
-**Artifact:** `out/_portfolio/rebalance_<csm_id>.json` — the CSM's book ARR vs. target, the red accounts, and the five lowest-touch green accounts (by `days_since_last_csm_touch` desc, `arr` asc) as transfer candidates. Posted to `#cs-leadership` weekly digest, not daily.
+**Artifact:** `out/_portfolio/rebalance_<csm_id>.json`: the CSM's book ARR vs. target, the red accounts, and the five lowest-touch green accounts (by `days_since_last_csm_touch` desc, `arr` asc) as transfer candidates. Posted to `#cs-leadership` weekly digest, not daily.
 
 **Owner:** CS leader. Reassignment is a human decision; the engine only surfaces the candidates.
 
@@ -223,7 +223,7 @@ All artifacts are written under `out/<account_id>/` with the pattern `<playbook_
 artifact: comm_exec_outreach
 playbook_id: PB-RET-01
 account_id: acc_01HZX...
-to: [contact_01HZ...]        # CRM contact ids — never raw emails in artifacts
+to: [contact_01HZ...]        # CRM contact ids, never raw emails in artifacts
 cc: []
 subject: "..."
 tone: "direct, non-defensive, outcome-focused"

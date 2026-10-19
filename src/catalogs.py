@@ -53,7 +53,7 @@ DEFAULT_PRICING_CATALOG: Dict[str, Any] = {
 
 DEFAULT_ROI_INPUTS: Dict[str, Any] = {
     "loaded_hourly_rate": None,
-    "loaded_hourly_rate_source": "not supplied — ask customer finance; do not assume",
+    "loaded_hourly_rate_source": "not supplied; ask customer finance; do not assume",
     "notes": "Populate from CS Ops roi_inputs table per account before EBR generation.",
 }
 

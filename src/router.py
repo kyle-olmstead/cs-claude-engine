@@ -102,7 +102,7 @@ class ActionRouter:
             executed = self._execute(c360, action, action_id)
             if self.slack and action["priority"] in ("P0", "P1"):
                 self.slack.alert(
-                    f"*{action['priority']} {pb}* — {c360['account']['name']} ({account_id})\n"
+                    f"*{action['priority']} {pb}*: {c360['account']['name']} ({account_id})\n"
                     f"{action['diagnosis']['summary'][:400]}\n"
                     f"confidence {action['confidence']:.2f} · {awaiting} item(s) awaiting approval · {action_path.name}"
                 )

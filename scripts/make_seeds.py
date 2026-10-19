@@ -1,5 +1,5 @@
 """
-Generate the dbt seeds (dbt/seeds/*.csv) — a deterministic, synthetic history for the sample
+Generate the dbt seeds (dbt/seeds/*.csv): a deterministic, synthetic history for the sample
 account in examples/sample_customer_360.json plus two smaller accounts, so `dbt build` runs on
 DuckDB with no warehouse and the marts produce rows the Python scorer can be checked against.
 

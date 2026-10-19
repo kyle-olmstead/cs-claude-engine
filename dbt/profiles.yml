@@ -2,7 +2,7 @@
 cs_claude_engine:
   target: dev
   outputs:
-    dev:                       # local, no warehouse needed — runs the marts on the bundled seeds
+    dev:                       # local, no warehouse needed; runs the marts on the bundled seeds
       type: duckdb
       path: dev.duckdb        # relative to where you run dbt (this folder)
       threads: 4

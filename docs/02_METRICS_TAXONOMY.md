@@ -1,4 +1,4 @@
-# 02 — Metrics Taxonomy
+# 02: Metrics Taxonomy
 
 > **In plain English.** Every number the engine uses, defined once, so nobody argues about the formula in a meeting. Retention numbers (Part A) tell you what already happened; health and adoption numbers (Part B) tell you what's about to; sentiment and relationship numbers (Part C) tell you how people feel about you; capacity numbers (Part D) tell you whether the team can cover the book. If you only read one section: **B1** (how the health score is built and how to check it against your own churn) and **Part E** (what "good" looks like for a company your size).
 
@@ -13,7 +13,7 @@ Conventions:
 
 ---
 
-## Part A — Retention & Revenue (lagging)
+## Part A: Retention & Revenue (lagging)
 
 ### A1. Net Revenue Retention (NRR)
 
@@ -32,7 +32,7 @@ Contraction  = Σ max(ARR_a(t0) − ARR_a(t1), 0)         for a ∈ cohort, ARR_
 Churn        = Σ ARR_a(t0)                             for a ∈ cohort, ARR_a(t1) = 0
 ```
 
-**Windows.** Monthly (t0 = prior month-end, t1 = this month-end) for operational tracking; trailing-12-month (t0 = 12 month-ends ago) for board reporting. Never annualize a monthly NRR by `^12` — it compounds noise.
+**Windows.** Monthly (t0 = prior month-end, t1 = this month-end) for operational tracking; trailing-12-month (t0 = 12 month-ends ago) for board reporting. Never annualize a monthly NRR by `^12`: it compounds noise.
 
 **Implementation.** `dbt/models/marts/mart_retention_nrr_grr.sql` (columns `nrr_monthly`, `nrr_ttm`); `metrics_calculator.cohort_retention()`.
 
@@ -92,11 +92,11 @@ where `N_opps` counts open opportunities of `type ∈ {expansion, upsell, cross_
 
 ---
 
-## Part B — Adoption & Product Health (leading)
+## Part B: Adoption & Product Health (leading)
 
 ### B1. Customer Health Score
 
-**Definition.** A 0–100 weighted composite of six component scores, each 0–100, with hard-gate overrides and a trend adjustment. The model is deliberately linear and additive so every point is attributable to a component — explainability is a requirement, not a nice-to-have.
+**Definition.** A 0–100 weighted composite of six component scores, each 0–100, with hard-gate overrides and a trend adjustment. The model is deliberately linear and additive so every point is attributable to a component: explainability is a requirement, not a nice-to-have.
 
 ```
 HealthScore = clamp( Σ_i w_i · C_i  +  TrendAdj , 0, 100 )   subject to overrides
@@ -196,7 +196,7 @@ Utilization drift = Utilization_t − Utilization_{t−90d}
 
 ---
 
-## Part C — Sentiment & Executive Alignment
+## Part C: Sentiment & Executive Alignment
 
 ### C1. NPS and CSAT
 
@@ -243,7 +243,7 @@ A single department with four engaged users counts as depth 1 for risk purposes 
 
 ---
 
-## Part D — Capacity & Efficiency (operational)
+## Part D: Capacity & Efficiency (operational)
 
 ### D1. ARR per CSM and portfolio balance
 
@@ -252,7 +252,7 @@ ARR_per_CSM = Σ ARR over CSM's book
 Balance index = σ(ARR_per_CSM across team) / mean(ARR_per_CSM)     target ≤ 0.20
 ```
 
-**Targets by motion.** Enterprise $5–8M / 15–30 accounts; mid-market $2–4M / 40–80; SMB $3–6M / 150–300 (pooled); digital $10M+ / 1,000+ (automation-led). The engine flags any CSM > 115% of segment target *and* holding ≥ 2 red accounts — that is where coverage fails first.
+**Targets by motion.** Enterprise $5–8M / 15–30 accounts; mid-market $2–4M / 40–80; SMB $3–6M / 150–300 (pooled); digital $10M+ / 1,000+ (automation-led). The engine flags any CSM > 115% of segment target *and* holding ≥ 2 red accounts; that is where coverage fails first.
 
 **Rebalancing input.** The orchestrator emits a `rebalance_candidate` note (not an action) when a book exceeds target, listing the lowest-touch green accounts as transfer candidates. Reassignment remains a human decision.
 
@@ -276,7 +276,7 @@ Gross-margin-adjusted LTV = ( ARPA × gross_margin ) / annual_dollar_churn_rate
 LTV:CAC = LTV / CAC
 ```
 
-`ARPA` = average ARR per account in the segment; `annual_dollar_churn_rate` = 1 − GRR_ttm (use GRR, not NRR — expansion is not guaranteed). `CAC` = fully-loaded S&M cost / new logos, trailing 4 quarters. When `annual_dollar_churn_rate < 0.02` cap the LTV horizon at 10 years (`LTV ≤ ARPA × margin × 10`) to avoid absurd multiples.
+`ARPA` = average ARR per account in the segment; `annual_dollar_churn_rate` = 1 − GRR_ttm (use GRR, not NRR; expansion is not guaranteed). `CAC` = fully-loaded S&M cost / new logos, trailing 4 quarters. When `annual_dollar_churn_rate < 0.02` cap the LTV horizon at 10 years (`LTV ≤ ARPA × margin × 10`) to avoid absurd multiples.
 
 **Benchmark.** ≥ 3.0 healthy; ≥ 5.0 under-investing in growth; < 1.5 unsustainable.
 
@@ -290,7 +290,7 @@ QBR lag (days)      = median( completed_at − due_at ) for completed
 QBR coverage (ARR)  = Σ ARR of accounts with a completed QBR / Σ ARR due
 ```
 
-A QBR is "due" by segment cadence: enterprise quarterly, mid-market semi-annual, SMB annual, digital none (replaced by automated value summary). "On time" = within 15 days of due date. ARR-weighted coverage matters more than count — a CSM at 70% count but 95% ARR coverage is prioritizing correctly.
+A QBR is "due" by segment cadence: enterprise quarterly, mid-market semi-annual, SMB annual, digital none (replaced by automated value summary). "On time" = within 15 days of due date. ARR-weighted coverage matters more than count: a CSM at 70% count but 95% ARR coverage is prioritizing correctly.
 
 **Automation.** The `executive_ebr_generator` prompt fires 30 days before due, so the pre-read and script exist before the CSM starts prep. Whether that lifts on-time completion in your team is one of the things to measure in the first quarter.
 
@@ -298,7 +298,7 @@ A QBR is "due" by segment cadence: enterprise quarterly, mid-market semi-annual,
 
 ---
 
-## Part E — Benchmark table (segment medians used by prompts)
+## Part E: Benchmark table (segment medians used by prompts)
 
 Prompts receive `segment_benchmarks_json`; these defaults ship in `orchestrator.DEFAULT_BENCHMARKS` and should be overwritten from the warehouse quarterly.
 
@@ -316,15 +316,15 @@ Prompts receive `segment_benchmarks_json`; these defaults ship in `orchestrator.
 
 ---
 
-## Part F — Metric lineage summary
+## Part F: Metric lineage summary
 
 | Metric | SQL | Python | Prompt(s) that reason over it |
 |---|---|---|---|
 | NRR / GRR / churn | `mart_retention_nrr_grr` | `cohort_retention` | orchestrator context, `executive_ebr_generator` |
-| Pipeline velocity | — (from opportunities) | `expansion_pipeline_velocity` | `whitespace_expansion_finder` |
+| Pipeline velocity | none (from opportunities) | `expansion_pipeline_velocity` | `whitespace_expansion_finder` |
 | Health score | `mart_customer_health_daily` | `compute_health_score` | all |
-| TTV | — (from milestones) | `time_to_value` | `ttv_acceleration` |
+| TTV | none (from milestones) | `time_to_value` | `ttv_acceleration` |
 | DAU/MAU, depth, utilization | `mart_customer_health_daily` | `dau_mau_ratio`, `feature_depth`, `seat_utilization` | `feature_depth_audit`, `whitespace_expansion_finder` |
-| NPS/CSAT + themes | `mart_customer_health_daily` (score) | — | `sentiment_analyzer`, `churn_risk_rca` |
+| NPS/CSAT + themes | `mart_customer_health_daily` (score) | none | `sentiment_analyzer`, `churn_risk_rca` |
 | ECRI, multithreading | `mart_customer_health_daily` (inputs) | `champion_risk_index`, `multithreading_depth` | `churn_risk_rca`, `renewal_defense_playbook` |
-| ARR/CSM, CRC, LTV:CAC, QBR velocity | — | respective functions | orchestrator capacity notes, `executive_ebr_generator` (ROI) |
+| ARR/CSM, CRC, LTV:CAC, QBR velocity | none | respective functions | orchestrator capacity notes, `executive_ebr_generator` (ROI) |

@@ -11,21 +11,21 @@ Conventions used below:
 
 **Index (read only the section you need):**
 
-- `account` — starts at line 30
-- `contract` — starts at line 44
-- `health` — starts at line 58
-- `usage` — starts at line 70
-- `support` — starts at line 93
-- `sentiment` — starts at line 107
-- `relationship` — starts at line 121
-- `opportunities` — starts at line 137
-- `whitespace` — starts at line 141
-- `cadence` — starts at line 151
-- `lifecycle` — starts at line 155
-- `conversations` — starts at line 166
-- `actions_last_30d` — starts at line 170
-- `benchmarks` — starts at line 174
-- `cs platform` (Gainsight) — at the end of the file
+- `account`: starts at line 30
+- `contract`: starts at line 44
+- `health`: starts at line 58
+- `usage`: starts at line 70
+- `support`: starts at line 93
+- `sentiment`: starts at line 107
+- `relationship`: starts at line 121
+- `opportunities`: starts at line 137
+- `whitespace`: starts at line 141
+- `cadence`: starts at line 151
+- `lifecycle`: starts at line 155
+- `conversations`: starts at line 166
+- `actions_last_30d`: starts at line 170
+- `benchmarks`: starts at line 174
+- `cs platform` (Gainsight): at the end of the file
 
 ---
 
@@ -33,29 +33,29 @@ Conventions used below:
 
 | Field | Primary → Fallback | How to derive | Flag |
 |---|---|---|---|
-| `account_id`, `name`, `created_at` | `~~crm` company/account record | Use the CRM's record id as `account_id` | — (required) |
+| `account_id`, `name`, `created_at` | `~~crm` company/account record | Use the CRM's record id as `account_id` | none (required) |
 | `segment` | `~~crm` segment/tier property via `segment_map` in the stack profile | If the CRM has no segment, derive: ARR ≥ 150k → enterprise; 40–150k → mid_market; 10–40k → smb; < 10k or self-serve → digital | `segment_derived_from_arr` |
 | `industry`, `region`, `employee_count`, `fiscal_year_end` | `~~crm` → `~~enrichment` | Enrichment can supply employee count and HQ region | omit field |
-| `csm_owner_id/name`, `ae_owner_id` | `~~crm` owner fields | — | `csm_owner_unknown` |
-| `product_line`, `crm_system` | stack profile | `crm_system` = the connector in the `crm` row | — |
-| `cse_opt_out_playbooks` | `~~crm` custom property `cse_opt_out_playbooks` (multi-select) | `[]` if absent | — |
-| `team[]` | `~~crm` owner + implementation/SE fields → `~~chat` account channel members | At minimum the CSM | — |
+| `csm_owner_id/name`, `ae_owner_id` | `~~crm` owner fields | none | `csm_owner_unknown` |
+| `product_line`, `crm_system` | stack profile | `crm_system` = the connector in the `crm` row | none |
+| `cse_opt_out_playbooks` | `~~crm` custom property `cse_opt_out_playbooks` (multi-select) | `[]` if absent | none |
+| `team[]` | `~~crm` owner + implementation/SE fields → `~~chat` account channel members | At minimum the CSM | none |
 | `business_outcomes[]` | `~~crm` custom object/property "business outcomes" → `~~documents` (business case, kickoff doc, prior EBR) | Each needs `outcome`, `unit`, `baseline`; `current`/`measured_at`/`source` when known. Never fabricate baselines; if a doc states a goal without a number, record the outcome with `baseline: null` | `business_outcomes_missing` |
-| `tech_stack[]` (optional extension) | `~~crm` property `tech_stack` → `~~enrichment` technographics | `{technology, category, source, detected_at}` | — |
+| `tech_stack[]` (optional extension) | `~~crm` property `tech_stack` → `~~enrichment` technographics | `{technology, category, source, detected_at}` | none |
 
 ## `contract`
 
 | Field | Primary → Fallback | How to derive | Flag |
 |---|---|---|---|
 | `arr`, `arr_90d_ago`, `currency` | `~~billing` subscriptions (sum active recurring lines × 12 for monthly) → `~~crm` ARR/amount property → `~~data warehouse` `int_arr_daily_snapshot` | `arr_90d_ago` from billing history or warehouse snapshot; `null` if unavailable | `arr_history_missing` |
-| `term_start`, `term_end`, `term_months`, `auto_renew` | `~~billing` → `~~crm` contract dates | — | required: if unknown set `term_end = today + 365`, flag `term_dates_assumed` |
-| `days_to_renewal` | computed | `term_end − today` in days | — |
-| `seats_purchased` | `~~billing` quantity → `~~crm` seats property → `~~product analytics` licensed seats | — | `seats_purchased_unknown` (set 0) |
-| `tier`, `modules_owned[]` | `~~billing` SKUs → `~~crm` | — | — |
+| `term_start`, `term_end`, `term_months`, `auto_renew` | `~~billing` → `~~crm` contract dates | none | required: if unknown set `term_end = today + 365`, flag `term_dates_assumed` |
+| `days_to_renewal` | computed | `term_end − today` in days | none |
+| `seats_purchased` | `~~billing` quantity → `~~crm` seats property → `~~product analytics` licensed seats | none | `seats_purchased_unknown` (set 0) |
+| `tier`, `modules_owned[]` | `~~billing` SKUs → `~~crm` | none | none |
 | `payment_days_past_due` | `~~billing` open invoices | max(today − due_date) over unpaid invoices, else 0 | `payment_status_unknown` (set 0) |
 | `contraction_flag_90d`, `contraction_detail`, `arr_change_reason` | `~~billing` history → `~~crm` closed-won downgrade opps | true if ARR or seats decreased in 90d; reason `contract_ramp` when the billing line is a scheduled step-up | `contraction_history_unknown` (set false) |
 | `renewal_opportunity` | `~~crm` open opportunity of type renewal | `{opportunity_id, stage, amount, close_date, cse_scenario}` | `null` |
-| `commit_units`, `consumed_units_run_rate_monthly` | `~~billing` / `~~product analytics` for consumption products | `null` for seat-based | — |
+| `commit_units`, `consumed_units_run_rate_monthly` | `~~billing` / `~~product analytics` for consumption products | `null` for seat-based | none |
 
 ## `health`
 
@@ -65,7 +65,7 @@ Computed by `src/models/health_score.py` after all other blocks exist. Before sc
 |---|---|---|
 | `score_30d_ago`, `score_90d_ago`, `band_30d_ago` | `~~data warehouse` `mart_customer_health_daily` → prior `customer_360.json` files under `cs-engine/accounts/<id>/history/` → `~~crm` property `cse_health_score` history | `null` if none; the trend adjustment then becomes 0 and flag `health_history_missing` |
 | `mart_score` | `~~data warehouse` mart, same day | `null` if no warehouse |
-| `components`, `overrides_applied`, `trend_adjustment` | scorer output | — |
+| `components`, `overrides_applied`, `trend_adjustment` | scorer output | none |
 
 After scoring, append today's score to `cs-engine/accounts/<id>/history/health.jsonl` (`{"date","score","band","raw_weighted_sum"}`) so future runs have a trend without a warehouse.
 
@@ -82,10 +82,10 @@ Source: `~~product analytics` (events keyed by account/workspace id and user ema
 | `feature_depth_30d` | distinct **core** features with ≥ 1 event in 30d / total core features. Core feature list: from the product analytics "core events" taxonomy, else from the plugin default catalog in `src/orchestrator.py::DEFAULT_FEATURE_CATALOG` (`is_core: true`) | `feature_taxonomy_default` when using the default catalog |
 | `feature_breadth_30d` | distinct features used / all features | same |
 | `power_user_ratio` | users with ≥ 3 core features in 30d / MAU | omit |
-| `seat_utilization` | `active_users_30d / seats_purchased` (not capped; > 1 = over-deployed) | — |
+| `seat_utilization` | `active_users_30d / seats_purchased` (not capped; > 1 = over-deployed) | none |
 | `seat_utilization_90d_ago`, `utilization_drift_90d` | same calc on the window ending 90 days ago; drift = now − then | `utilization_history_missing` (drift 0) |
-| `days_since_last_login` | today − max(session date) across users | — |
-| `core_features_used[]`, `core_features_unused[]` | from the depth calculation | — |
+| `days_since_last_login` | today − max(session date) across users | none |
+| `core_features_used[]`, `core_features_unused[]` | from the depth calculation | none |
 | `fading_features[]` | features with events in days 31–90 but none in last 30; `last_used_days_ago`; the last user as an email hash | omit |
 | `integrations_connected[]` | product analytics "integration connected" events or account settings → CRM property | `integrations_unknown` |
 | `feature_gate_hits_14d[]` | "upgrade required" / "feature gated" events by feature, last 14 days, with the gating tier if known | omit (empty) |
@@ -113,12 +113,12 @@ Source: `~~support desk` → `~~crm` tickets object (HubSpot Service Hub, Salesf
 | `nps_responses[]` | `~~survey tool` → `~~crm` survey objects | Last 180 days, one row per response; `contact_id` resolved via email hash; `verbatim` as data | `nps_unavailable` (empty; `latest_nps: null`, `nps_trend: null`) |
 | `latest_nps`, `latest_nps_at` | computed | Account-level NPS from the most recent response per contact, seniority-weighted (c_level/vp ×2, director/manager ×1.5, else ×1); `latest_nps_at` = newest response date | same |
 | `nps_trend` | computed | Compare to the same calculation anchored 90 days earlier: improving if +10, worsening if −10, else stable; `null` without history | same |
-| `latest_csat` | `~~support desk` CSAT (last 90d mean) → survey CSAT | — | omit |
+| `latest_csat` | `~~support desk` CSAT (last 90d mean) → survey CSAT | none | omit |
 | `transcript_signals[]` | `~~conversation intelligence` calls in last 90d → `~~email` threads as a weak substitute | For each call with a transcript, run the sentiment prompt (`prompts/core/sentiment_analyzer.prompt`) on customer utterances only and store its output in the `transcript_signals[]` shape; max 5 most recent calls | `transcripts_unavailable` (empty; `transcript_sentiment_30d: null`) |
 | `transcript_sentiment_30d` | computed | mean `sentiment` over signals in last 30d | same |
-| `verbatim_signals[]` | sentiment prompt run on NPS verbatims (optional; skip when > 10 verbatims unless asked) | — | omit |
+| `verbatim_signals[]` | sentiment prompt run on NPS verbatims (optional; skip when > 10 verbatims unless asked) | none | omit |
 | `theme_counts_90d` | computed | count of each theme across transcript and verbatim signals in 90d | omit |
-| `ecri`, `ecri_components` | computed per taxonomy §C2 | JobChange from `relationship` enrichment/left_company_at; Disengagement from champion `last_engaged_at`; SingleThread from `multithreading_depth`; NoExecSponsor from `exec_sponsor_engaged_180d`; Tenure from champion `tenure_months_at_account`. Use `src/models/metrics_calculator.py::champion_risk_index` when Python is available | — (required; compute with available inputs) |
+| `ecri`, `ecri_components` | computed per taxonomy §C2 | JobChange from `relationship` enrichment/left_company_at; Disengagement from champion `last_engaged_at`; SingleThread from `multithreading_depth`; NoExecSponsor from `exec_sponsor_engaged_180d`; Tenure from champion `tenure_months_at_account`. Use `src/models/metrics_calculator.py::champion_risk_index` when Python is available | none (required; compute with available inputs) |
 
 ## `relationship`
 
@@ -127,14 +127,14 @@ Source: `~~crm` contacts + activities (emails, calls, meetings, notes) → `~~em
 | Field | How to derive | Flag |
 |---|---|---|
 | `stakeholders[]` | Contacts associated with the account, limited to those with a title or any activity in 365d, max 25. `persona` from a CRM persona/buying-role property, else infer from title keywords (CFO/COO/VP Finance → economic_buyer or executive_sponsor; "admin"/"systems" → admin; "security"/"IT" → it_security; "developer"/"engineer" → developer; "operations manager" → ops_manager; else end_user). `seniority` from title keywords (chief/C-level → c_level; VP/SVP → vp; director → director; manager/lead/head → manager; else individual_contributor). `is_champion` / `is_exec_sponsor` from CRM flags; if no flags exist, mark the most-engaged non-exec contact as champion and flag `champion_inferred` | `stakeholders_unavailable` (empty) |
-| `stakeholders[].last_engaged_at`, `engagements_90d`, `last_engagement_direction` | From activities; `two_way` if both inbound and outbound in 90d | — |
+| `stakeholders[].last_engaged_at`, `engagements_90d`, `last_engagement_direction` | From activities; `two_way` if both inbound and outbound in 90d | none |
 | `stakeholders[].enrichment` | `~~enrichment` lookup for champion, exec sponsor, economic buyer only; set `employer_matches_account` by normalized company name comparison; `enrichment_stale: true` if older than 30d | `enrichment_unavailable` (null) |
-| `stakeholders[].left_company_at` | CRM property (e.g., "left company", "no longer at company") | — |
-| `champion` | From the champion stakeholder: `status` = departed if `left_company_at` set or enrichment employer mismatch; at_risk if no engagement in 60d or title changed to non-buying role; active otherwise; none if no champion. `replacement_identified` from CRM successor property or a second contact flagged champion | — |
-| `multithreading_depth` | Contacts engaged two-way in 90d, counted only if they span ≥ 2 functions or ≥ 2 seniority levels, else 1 (`metrics_calculator.multithreading_depth`) | — |
-| `functions_engaged_90d[]` | distinct function/persona of engaged contacts | — |
+| `stakeholders[].left_company_at` | CRM property (e.g., "left company", "no longer at company") | none |
+| `champion` | From the champion stakeholder: `status` = departed if `left_company_at` set or enrichment employer mismatch; at_risk if no engagement in 60d or title changed to non-buying role; active otherwise; none if no champion. `replacement_identified` from CRM successor property or a second contact flagged champion | none |
+| `multithreading_depth` | Contacts engaged two-way in 90d, counted only if they span ≥ 2 functions or ≥ 2 seniority levels, else 1 (`metrics_calculator.multithreading_depth`) | none |
+| `functions_engaged_90d[]` | distinct function/persona of engaged contacts | none |
 | `days_since_last_csm_touch` | today − last outbound activity by the CSM owner (CRM) → last email sent by the user to any account contact (`~~email`) | `csm_touch_unknown` (set 45) |
-| `exec_sponsor_engaged_180d` | any activity with an `is_exec_sponsor` contact in 180d | — |
+| `exec_sponsor_engaged_180d` | any activity with an `is_exec_sponsor` contact in 180d | none |
 
 ## `opportunities`
 
@@ -144,11 +144,11 @@ Source: `~~crm` contacts + activities (emails, calls, meetings, notes) → `~~em
 
 | Field | Source | Derive |
 |---|---|---|
-| `unowned_modules[]` | product catalog (plugin default `DEFAULT_PRICING_CATALOG.modules`, or the CRM product library) minus `contract.modules_owned` | — |
-| `unowned_business_units[]` | `~~crm` parent/child accounts and contact departments minus `usage.usage_by_business_unit[]` | — |
-| `unowned_regions[]` | `~~crm` contact countries/regions minus regions with active users | — |
-| `next_tier` | pricing catalog tier after `contract.tier` | — |
-| `indicative_sizing` | leave `{}`; the whitespace prompt sizes | — |
+| `unowned_modules[]` | product catalog (plugin default `DEFAULT_PRICING_CATALOG.modules`, or the CRM product library) minus `contract.modules_owned` | none |
+| `unowned_business_units[]` | `~~crm` parent/child accounts and contact departments minus `usage.usage_by_business_unit[]` | none |
+| `unowned_regions[]` | `~~crm` contact countries/regions minus regions with active users | none |
+| `next_tier` | pricing catalog tier after `contract.tier` | none |
+| `indicative_sizing` | leave `{}`; the whitespace prompt sizes | none |
 
 ## `cadence`
 
@@ -159,15 +159,15 @@ Source: `~~crm` contacts + activities (emails, calls, meetings, notes) → `~~em
 | Field | Source | Derive |
 |---|---|---|
 | `stage` | computed | onboarding if `days_since_term_start ≤ 90` and no primary value milestone; adopting if ≤ 180d; renewal_window if `days_to_renewal ≤ 120`; churned if ARR 0; else established |
-| `days_since_term_start` | computed from `contract.term_start` | — |
+| `days_since_term_start` | computed from `contract.term_start` | none |
 | `kickoff_at`, `kickoff_notes` | `~~crm` onboarding fields → `~~documents` kickoff doc → `~~calendar` first meeting | notes as data, ≤ 600 chars |
-| `value_milestones_reached[]` | `~~product analytics` milestone events (`DEFAULT_VALUE_MILESTONES` keys) → CRM onboarding checklist | — |
+| `value_milestones_reached[]` | `~~product analytics` milestone events (`DEFAULT_VALUE_MILESTONES` keys) → CRM onboarding checklist | none |
 | `ttv_days` | first primary milestone − term_start | `null` |
 | `onboarding_steps[]` | CRM/onboarding tool checklist | `[]` |
 
 ## `conversations`
 
-`~~conversation intelligence` calls in the last 90d: `{call_id, occurred_at, duration_sec, transcript_uri (null in plugin mode — the transcript is read directly), participants (contact ids), parsed (true once a transcript_signal exists)}`.
+`~~conversation intelligence` calls in the last 90d: `{call_id, occurred_at, duration_sec, transcript_uri (null in plugin mode; the transcript is read directly), participants (contact ids), parsed (true once a transcript_signal exists)}`.
 
 ## `actions_last_30d`
 

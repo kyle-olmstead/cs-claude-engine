@@ -1,9 +1,9 @@
 {#-
     One row per account: the designated champion and their status.
-      departed  — CRM says they left, or enrichment shows a different employer
-      at_risk   — no activity in 60 days
-      active    — otherwise
-      none      — no champion flagged
+      departed: CRM says they left, or enrichment shows a different employer
+      at_risk:  no activity in 60 days
+      active:   otherwise
+      none:     no champion flagged
     replacement_identified: a second contact flagged champion who is still at the company.
 -#}
 with champions as (

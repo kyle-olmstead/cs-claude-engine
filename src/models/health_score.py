@@ -537,7 +537,7 @@ def _main(argv: List[str]) -> int:
         assert_no_drift(result, (doc.get("health") or {}).get("mart_score"))
         drift_note = "drift check: OK"
     except HealthScoreDriftError as e:
-        drift_note = f"drift check: FAILED — {e}"
+        drift_note = f"drift check: FAILED ({e})"
     if as_json:
         out = result.to_dict()
         out["drift_check"] = drift_note

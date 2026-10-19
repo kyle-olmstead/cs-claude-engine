@@ -5,8 +5,8 @@ description: >
   [account]", "is [account] ready for an upsell", "[account] is over their seat limit", "which of
   my accounts are expansion-ready", "size the expansion at [account]", "sales handoff for
   [account]", or when a book review flags PB-EXP-01 or PB-EXP-02. It checks expansion readiness
-  (any red flag defers the play), enumerates evidence-backed plays — seats, tier, modules,
-  business units, regions, usage commit — sizes each as indicative annualized list, names the
+  (any red flag defers the play), enumerates evidence-backed plays (seats, tier, modules,
+  business units, regions, usage commit), sizes each as indicative annualized list, names the
   sponsor and the objection to expect, decides the motion by segment (self-serve nudge vs
   sales-assist handoff), and drafts one approval-gated sponsor communication.
 metadata:
@@ -27,25 +27,25 @@ Readiness gate first: an open P1/P2, payment past due, contraction in 90d, champ
 
 ## Inputs beyond the Customer 360
 
-- `pricing_catalog_json` — for **sizing only**: the user's price book from `~~crm` product library or `~~documents` (ask once; remember in the stack profile) → plugin default `DEFAULT_PRICING_CATALOG`. Say which was used; default prices are placeholders.
-- `feature_audit_json` — run `feature-depth-audit` as a sub-step first when gate hits or unowned modules are in play, and pass its `feature_audit` block; else `{}`.
+- `pricing_catalog_json`: for **sizing only**, the user's price book from `~~crm` product library or `~~documents` (ask once; remember in the stack profile) → plugin default `DEFAULT_PRICING_CATALOG`. Say which was used; default prices are placeholders.
+- `feature_audit_json`: run `feature-depth-audit` as a sub-step first when gate hits or unowned modules are in play, and pass its `feature_audit` block; else `{}`.
 
 ## Prompts
 
 1. (conditional) `${CLAUDE_PLUGIN_ROOT}/prompts/adoption/feature_depth_audit.prompt`
-2. `${CLAUDE_PLUGIN_ROOT}/prompts/expansion/whitespace_expansion_finder.prompt` — set `playbook_id` by segment; max four plays; sizing with the catalog formulas; `do_not_say` list for the AE.
+2. `${CLAUDE_PLUGIN_ROOT}/prompts/expansion/whitespace_expansion_finder.prompt`: set `playbook_id` by segment; max four plays; sizing with the catalog formulas; `do_not_say` list for the AE.
 
 For enterprise/mid-market, offer to continue into `ebr-generator` with `variant = "expansion"` so the play lands in an executive review rather than a cold ask.
 
 ## Artifacts
 
 - `PB-EXP-0x.whitespace_expansion_finder.action.json` with the `expansion_brief` block
-- `PB-EXP-0x.expansion_brief.md` — readiness, ranked plays with sizing basis and confidence, sponsor, objection and response, sales handoff notes with `do_not_say`
-- `PB-EXP-0x.whitespace_expansion_finder.comm_1.md` — sponsor discovery email (approval required); for digital, the in-app nudge copy is in the action as a `digital_nudge`
+- `PB-EXP-0x.expansion_brief.md`: readiness, ranked plays with sizing basis and confidence, sponsor, objection and response, sales handoff notes with `do_not_say`
+- `PB-EXP-0x.whitespace_expansion_finder.comm_1.md`: sponsor discovery email (approval required); for digital, the in-app nudge copy is in the action as a `digital_nudge`
 
 ## Proposed writes
 
-- ~~crm: `expansion_candidate = true` on the account; an **opportunity suggestion** as a task or note ("Suggested opp: <name>, <band>, close within <window>") — the engine never creates opportunities or touches forecast stages.
+- ~~crm: `expansion_candidate = true` on the account; an **opportunity suggestion** as a task or note ("Suggested opp: <name>, <band>, close within <window>"); the engine never creates opportunities or touches forecast stages.
 - ~~chat: handoff post to the expansion queue channel with qualifying facts and `do_not_say`.
 - ~~email: draft of comm_1.
 

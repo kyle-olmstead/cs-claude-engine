@@ -6,14 +6,14 @@ Pure functions, no I/O, no network. Used by the Claude client (validation + retr
 
 Checks, in the order they run:
   1. JSON Schema (Draft 2020-12, with format checking)
-  2. Evidence integrity — every evidence[].source_path must resolve inside the Customer 360,
+  2. Evidence integrity: every evidence[].source_path must resolve inside the Customer 360,
      and when a value is claimed it must match the document's value (a real path with a wrong
      number is the most plausible hallucination channel; this closes it)
-  3. Recipient safety — communications only to current stakeholders
-  4. Policy floors — customer-facing items and commercial/forecast writes always need approval;
+  3. Recipient safety: communications only to current stakeholders
+  4. Policy floors: customer-facing items and commercial/forecast writes always need approval;
      low-confidence actions are lowered to P3; floors are recorded in data_quality_flags and
      never mutate free-text fields
-  5. Cooldowns — a playbook that fired inside its window and is still open is not re-fired
+  5. Cooldowns: a playbook that fired inside its window and is still open is not re-fired
 """
 
 from __future__ import annotations

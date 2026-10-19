@@ -19,7 +19,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 
 ## When it applies
 
-`contract.days_to_renewal ≤ 120` and any of: `health.band == "yellow"`, `usage.seat_utilization < 0.50`, `contract.contraction_flag_90d == true`. If the account meets a PB-RET-01 trigger instead (red, champion departed, aged P1, ECRI ≥ 60), run `red-account-turnaround` — it includes this plan. If the renewal is more than 120 days out, say so and offer `customer-360` or `ebr-generator` (a renewal-variant EBR at R-180 is the better move).
+`contract.days_to_renewal ≤ 120` and any of: `health.band == "yellow"`, `usage.seat_utilization < 0.50`, `contract.contraction_flag_90d == true`. If the account meets a PB-RET-01 trigger instead (red, champion departed, aged P1, ECRI ≥ 60), run `red-account-turnaround`: it includes this plan. If the renewal is more than 120 days out, say so and offer `customer-360` or `ebr-generator` (a renewal-variant EBR at R-180 is the better move).
 
 ## Prompt
 
@@ -28,12 +28,12 @@ Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/playbook-protocol.m
 ## Artifacts
 
 - `PB-RET-02.renewal_defense_playbook.action.json`
-- `PB-RET-02.renewal_defense_playbook.comm_1.md` — renewal kickoff draft to the economic buyer (or exec sponsor if no economic buyer is engaged); approval required.
+- `PB-RET-02.renewal_defense_playbook.comm_1.md`: renewal kickoff draft to the economic buyer (or exec sponsor if no economic buyer is engaged); approval required.
 - A one-page `PB-RET-02.renewal_plan.md` rendered from the action for the user's own renewal review: scenario table, stakeholder asks, timeline, value-story inputs and the measurements still needed.
 
 ## Proposed writes
 
-- ~~crm: `cse_scenario` on the renewal opportunity (informational; never the stage, amount, close date or forecast category); task "Renewal kickoff meeting — <account>" due within 10 days; one task per unmeasured value-story input ("Measure <outcome> before R-90").
+- ~~crm: `cse_scenario` on the renewal opportunity (informational; never the stage, amount, close date or forecast category); task "Renewal kickoff meeting: <account>" due within 10 days; one task per unmeasured value-story input ("Measure <outcome> before R-90").
 - ~~calendar: proposed hold for the value review inside the R-90 window.
 - ~~email: a *draft* of comm_1 in the user's mailbox.
 
