@@ -31,3 +31,13 @@ jobs:
           dbt build --exclude resource_type:seed
       - name: SQL ↔ Python health-score parity
         run: python scripts/check_parity.py
+  warehouses:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt duckdb "sqlglot==30.23.0" "dbt-core==1.12.5" "dbt-duckdb==1.11.0" "dbt-snowflake==1.12.3" "dbt-bigquery==1.12.1" "dbt-databricks==1.12.7"
+      - name: Marts match on Snowflake, BigQuery and Databricks (offline compile with each adapter, translated run on the seeds)
+        run: python scripts/check_warehouses.py

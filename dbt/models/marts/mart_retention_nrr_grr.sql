@@ -205,7 +205,11 @@ select
         else 'balanced'
     end                                                                                                       as churn_concentration_label,
     -- peer-quartile context for the EBR generator: where does this segment's NRR sit across trailing periods?
-    percent_rank() over (partition by window_type, segment order by nrr)                                      as nrr_percentile_within_segment_history,
+    -- ranked only among periods that have an NRR: warehouses disagree on where NULLs sort (BigQuery and
+    -- Databricks put them first, Snowflake and DuckDB last), and a NULL period is not a low one
+    case when nrr is not null then
+        percent_rank() over (partition by window_type, segment, case when nrr is null then 1 else 0 end order by nrr)
+    end                                                                                                       as nrr_percentile_within_segment_history,
     current_timestamp                                                                                         as computed_at
 from ratios
 where cohort_logos > 0 or new_logos > 0

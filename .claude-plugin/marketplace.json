@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Marketplace for the CS-Claude Engine plugin (plugin id: cs-engine). Add this repository as a marketplace, then install cs-engine from it.",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "plugins": [
     {
@@ -16,7 +16,7 @@
         "source": "github",
         "repo": "kyle-olmstead/cs-claude-engine"
       },
-      "version": "1.5.0",
+      "version": "1.6.0",
       "author": {
         "name": "Kyle Olmstead"
       },

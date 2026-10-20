@@ -145,8 +145,8 @@ The engine is only as good as three things in your CRM. Thirty minutes here is w
 | Product analytics | Amplitude, Mixpanel, Pendo, PostHog | |
 | Billing | Stripe, Chargebee | |
 | Enrichment | Clay, Apollo, ZoomInfo | |
-| Warehouse | the dbt project | BigQuery, Snowflake, Databricks, dbt |
-| Chat, email, calendar, docs | | Slack, Microsoft 365, Gmail, Google Calendar, Google Drive, Notion |
+| Warehouse | the dbt project on BigQuery, Snowflake and Databricks (CI checks all three) | dbt, Blaze SQL, Neon Postgres |
+| Chat, email, calendar, docs | Slack, Microsoft 365, Gmail, Google Calendar, Google Drive, Notion | Calendly, Box, Dropbox, Confluence |
 
 The maps added on 2026-10-20 were written from each vendor's documentation and the connector's published tool list; none has been run against a live account yet. Setup checks each one the first time it runs and tells you anything it could not confirm.
 

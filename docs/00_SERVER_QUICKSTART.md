@@ -17,7 +17,7 @@
 git clone https://github.com/kyle-olmstead/cs-claude-engine.git
 cd cs-claude-engine
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt dbt-duckdb        # dbt-duckdb is for the local run; add dbt-snowflake / dbt-bigquery / dbt-postgres for yours
+pip install -r requirements-dev.txt dbt-duckdb        # dbt-duckdb is for the local run; add dbt-snowflake / dbt-bigquery / dbt-databricks / dbt-postgres for yours
 ```
 
 ## Two minutes: the whole pipeline on your laptop, no warehouse
@@ -69,7 +69,7 @@ python -m src.orchestrator --input examples/sample_customer_360.json --dry-run -
 
 Pointing the project at real data is three edits, all in `dbt/`:
 
-1. **Profile**: add your warehouse target to `dbt/profiles.yml` (templates for Snowflake, BigQuery and Postgres are already there, reading credentials from env vars) and run with `--target <name>`.
+1. **Profile**: add your warehouse target to `dbt/profiles.yml` (templates for Snowflake, BigQuery, Databricks and Postgres are already there, reading credentials from env vars) and run with `--target <name>`. CI compiles the project with the Snowflake, BigQuery and Databricks adapters and checks that each produces the same marts as the DuckDB build (`scripts/check_warehouses.py`); Postgres is not checked.
 2. **Sources**: in `dbt/models/sources.yml`, set the dbt vars `source_database` / `source_schema` to where your ELT lands the raw tables, and change each table's `identifier` to your table name. The column names each staging model expects are documented there; if yours differ, rename inside the matching `dbt/models/staging/stg_*.sql`; that is the only place source column names appear.
 3. **Weights**: `config/health_weights.json` is the single source of truth; `python scripts/sync_health_weights.py --write` copies it into `dbt_project.yml`, and `--check` runs in CI so the two can never drift.
 

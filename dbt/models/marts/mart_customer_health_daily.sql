@@ -33,8 +33,10 @@
         int_transcript_sentiment_daily (optional; from call_transcript_parser output)
 
     Dialect notes: date arithmetic uses dbt's cross-database macros (dbt.dateadd, dbt.datediff,
-    dbt.concat, dbt.type_string); the median uses macros/median_of.sql. Runs unchanged on DuckDB
-    (local dev via seeds), Snowflake, BigQuery, Postgres/Redshift, and Databricks.
+    dbt.concat, dbt.type_string); the median uses macros/median_of.sql. CI builds it on DuckDB from
+    the seeds, and scripts/check_warehouses.py compiles it with the Snowflake, BigQuery and
+    Databricks adapters and requires the same rows. Postgres/Redshift branches exist in the macros
+    but are not checked.
 */
 
 {% set w = var('health_weights', {'adoption': 0.25, 'engagement': 0.15, 'support': 0.15, 'sentiment': 0.15, 'relationship': 0.15, 'commercial': 0.15}) %}
@@ -83,8 +85,7 @@ usage_30d as (
         a.as_of_date,
         count(distinct u.user_email)                                              as mau_30d,
         count(distinct case when u.sessions > 0 then u.user_email end)           as active_users_30d,
-        count(distinct {{ dbt.concat(["cast(u.usage_date as " ~ dbt.type_string() ~ ")", "'|'", 'u.user_email']) }}) / 30.0               as avg_dau_30d,
-        max(u.usage_date)                                                        as last_login_date
+        count(distinct {{ dbt.concat(["cast(u.usage_date as " ~ dbt.type_string() ~ ")", "'|'", 'u.user_email']) }}) / 30.0               as avg_dau_30d
     from accounts a
     left join {{ ref('stg_product__daily_usage') }} u
         on u.account_id = a.account_id
@@ -111,7 +112,13 @@ usage_90d_ago as (
 usage_presence as (
     -- the product source has produced at least one row for the account, ever. Without a row the
     -- adoption inputs are unknown (null), not zero: a dormant account with history still scores 0.
-    select a.account_id, a.as_of_date, count(u.user_email) > 0 as usage_observed
+    -- The last login is the latest one ever, not the latest inside 30 days, so an account nobody
+    -- has opened in two months reads "60 days since last login", not "unknown".
+    select
+        a.account_id,
+        a.as_of_date,
+        count(u.user_email) > 0                                                  as usage_observed,
+        max(case when u.sessions > 0 then u.usage_date end)                      as last_login_date
     from accounts a
     left join {{ ref('stg_product__daily_usage') }} u
         on u.account_id = a.account_id and u.usage_date <= a.as_of_date
@@ -258,14 +265,14 @@ inputs as (
         a.*,
         -- adoption (null, not 0, when the product source has never reported this account; mirrors usage.* = null in Python)
         coalesce(up.usage_observed, false)                                                                      as usage_observed,
-        case when not up.usage_observed then null when u.mau_30d > 0 then least(u.avg_dau_30d / u.mau_30d, 1.0) end as dau_mau_30d,
+        case when not up.usage_observed then null when u.mau_30d > 0 then least(u.avg_dau_30d / u.mau_30d, 1.0) else 0 end as dau_mau_30d,
         case when up.usage_observed then u.mau_30d end                                                           as mau_30d,
         case when up.usage_observed then u.active_users_30d end                                                  as active_users_30d,
         case when up.usage_observed then f.core_features_used_30d / cast({{ core_feature_count }} as double) end        as feature_depth_30d,
         case when up.usage_observed then f.all_features_used_30d / cast(nullif(fu.all_feature_count, 0) as double) end  as feature_breadth_30d,
         case when up.usage_observed and a.seats_purchased > 0 then u.active_users_30d / cast(a.seats_purchased as double) end             as seat_utilization,
         case when up.usage_observed and a.seats_purchased > 0 then u90.active_users_30d_at_90d_ago / cast(a.seats_purchased as double) end as seat_utilization_90d_ago,
-        case when up.usage_observed then {{ dbt.datediff('u.last_login_date', 'a.as_of_date', 'day') }} end                  as days_since_last_login,
+        case when up.usage_observed then {{ dbt.datediff('up.last_login_date', 'a.as_of_date', 'day') }} end                 as days_since_last_login,
         -- engagement / relationship
         ce.engaged_contacts_90d,
         case when ce.functions_engaged_90d >= 2 or ce.seniorities_engaged_90d >= 2 then ce.engaged_contacts_90d
@@ -428,17 +435,14 @@ raw_scores as (
 -- ---------------------------------------------------------------------------------
 -- Prior-day lookups come from this run's rows plus, on incremental runs, the existing table.
 -- A date-anchored self-join (not a row LAG) so gaps in the spine cannot shift the window.
+-- The trend reads the prior raw sum; the prior *scores* are looked up after the final score
+-- exists (see `history` below), so a full refresh and an incremental run agree.
 prior_rows as (
-    select account_id, as_of_date, raw_weighted_sum, health_score
-    from (
-        select
-            account_id, as_of_date, raw_weighted_sum,
-            least(100, greatest(0, raw_weighted_sum)) as health_score   -- provisional; final score for today's rows is computed below
-        from raw_scores
-    )
+    select account_id, as_of_date, raw_weighted_sum
+    from raw_scores
     {% if is_incremental() %}
     union all
-    select account_id, as_of_date, raw_weighted_sum, health_score
+    select account_id, as_of_date, raw_weighted_sum
     from {{ this }}
     where as_of_date < (select min(as_of_date) from dates)
     {% endif %}
@@ -449,12 +453,9 @@ scored as (
         r.*,
         p30.raw_weighted_sum                                                                                    as prior_raw_30d,
         case when p30.raw_weighted_sum is null then 0
-             else least(8, greatest(-8, (r.raw_weighted_sum - p30.raw_weighted_sum) * 0.25)) end                 as trend_adjustment_calc,
-        p30.health_score                                                                                        as health_score_30d_ago,
-        p90.health_score                                                                                        as health_score_90d_ago
+             else least(8, greatest(-8, (r.raw_weighted_sum - p30.raw_weighted_sum) * 0.25)) end                 as trend_adjustment_calc
     from raw_scores r
     left join prior_rows p30 on p30.account_id = r.account_id and p30.as_of_date = {{ dbt.dateadd('day', -30, 'r.as_of_date') }}
-    left join prior_rows p90 on p90.account_id = r.account_id and p90.as_of_date = {{ dbt.dateadd('day', -90, 'r.as_of_date') }}
 ),
 
 final as (
@@ -502,16 +503,31 @@ final as (
             case when coalesce(payment_days_past_due, 0) > 60 then 50 else 100 end,
             case when coalesce(oldest_open_p1_age_days, 0) > 5 then 65 else 100 end,
             case when seat_utilization < 0.20 and seat_utilization_90d_ago < 0.20 and arr > 50000 then 55 else 100 end
-        )                                                                 as health_score,
-        health_score_30d_ago,
-        health_score_90d_ago
+        )                                                                 as health_score
     from scored
+),
+
+-- Final scores from this run plus, on incremental runs, the stored history: the 30- and 90-day
+-- lookbacks always read a final (capped) score, whichever way the table was built.
+history as (
+    select account_id, as_of_date, health_score
+    from final
+    {% if is_incremental() %}
+    union all
+    select account_id, as_of_date, health_score
+    from {{ this }}
+    where as_of_date < (select min(as_of_date) from dates)
+    {% endif %}
 )
 
 select
     f.*,
-    case when health_coverage < 0.60 then 'insufficient_data'
-         when health_score >= 75 then 'green' when health_score >= 50 then 'yellow' else 'red' end as health_band,
-    case when health_score_30d_ago >= 75 then 'green' when health_score_30d_ago >= 50 then 'yellow' when health_score_30d_ago is not null then 'red' end as health_band_30d_ago,
+    h30.health_score                                                  as health_score_30d_ago,
+    h90.health_score                                                  as health_score_90d_ago,
+    case when f.health_coverage < 0.60 then 'insufficient_data'
+         when f.health_score >= 75 then 'green' when f.health_score >= 50 then 'yellow' else 'red' end as health_band,
+    case when h30.health_score >= 75 then 'green' when h30.health_score >= 50 then 'yellow' when h30.health_score is not null then 'red' end as health_band_30d_ago,
     current_timestamp as computed_at
 from final f
+left join history h30 on h30.account_id = f.account_id and h30.as_of_date = {{ dbt.dateadd('day', -30, 'f.as_of_date') }}
+left join history h90 on h90.account_id = f.account_id and h90.as_of_date = {{ dbt.dateadd('day', -90, 'f.as_of_date') }}
