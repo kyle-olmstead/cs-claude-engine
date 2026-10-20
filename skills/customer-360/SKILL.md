@@ -10,7 +10,7 @@ description: >
   enrichment), computes the weighted health score with full component explainability, and
   reports the result with evidence paths and data-quality flags.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   playbook_id: "C360"
 ---
 
@@ -90,18 +90,27 @@ and set `data_quality_flags: ["health_scored_manually"]`.
 
 ## Step 4: Report
 
-Reply with, in this order:
+Write for a CEO who has never heard of this account
+(`${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/writing-standard.md`). In this order:
 
-1. One line: `<name> · <segment> · $<ARR> · <days_to_renewal>d to renewal · health <score> <BAND> (<delta> vs 30d)`.
-2. The component table from the scorer (`explain()` output): component, normalized, weight,
-   contribution, the raw inputs: this is the explanation; never re-derive.
-3. Overrides applied, if any, and what would lift the cap.
-4. The three facts a VP would ask about first (dominant signal, champion status, support/sentiment
-   standout), each with its JSON path.
-5. `data_quality_flags`: what was missing and which connector would fill it.
-6. Which playbook, if any, would fire on this document (run
-   `python3 ${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py --input <file> --triggers-only`), and offer
-   to run it.
+1. **Headline**: the account, its health in words and numbers, and the one reason that matters
+   most. "Contoso Logistics needs attention: health 60 out of 100, down from 79 a month ago,
+   because their main contact left."
+2. **The account in brief**: who they are, what they use the product for, customer since, what
+   they pay a year, when the contract renews (calendar date), and the value they have seen.
+3. **What is driving the score**: a plain table from the scorer's `explain()` output, one row per
+   area (product use, engagement, contract, support, sentiment, relationships) with its score out
+   of 100 and the facts behind it in words. Never re-derive the numbers. If an override capped the
+   score, say what caused the cap and what would lift it.
+4. **The three things leadership would ask first**: the strongest signal, the state of the
+   relationship (main contact, senior sponsor, how many people we talk to), and the standout from
+   support or customer feedback, with a short quote when there is one.
+5. **What we could not see**: missing sources in one sentence each, and which connection would fill
+   the gap.
+6. **What to do next**: the playbook that fits, in plain words, with an offer to run it (check with
+   `python3 ${CLAUDE_PLUGIN_ROOT}/src/orchestrator.py --input <file> --triggers-only`).
+7. **Details for the CSM**: segment, the component table with weights and contributions, the
+   evidence paths for item 4, and `data_quality_flags`.
 
 Save the document; the playbook skills read it rather than re-pulling. Refresh it when it is
 older than one day or when the user says something changed.
@@ -112,5 +121,6 @@ older than one day or when the user says something changed.
 - Never write to any connector in this skill. It is read-only by construction.
 - Keep connector calls proportionate: a 360 should take a handful of queries per category, not
   dozens. Batch where the connector allows.
-- Keep the user informed between calls with one line per block ("usage pulled from Amplitude,
-  31 users active of 50 seats") so a long assembly is not a silent wait.
+- Keep the user informed between calls with one plain line per block ("Product use from
+  Amplitude: 31 of their 50 seats were active this month") so a long assembly is not a silent
+  wait.

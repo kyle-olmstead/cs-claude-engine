@@ -16,7 +16,7 @@ The common procedure every playbook skill follows. A playbook skill names its `p
 
 ## 2. Reasoning
 
-Perform the prompt's `<analysis_steps>` in full, in order, before writing anything. For a chained playbook, the output of the first prompt is an input to the second (the RCA feeds renewal defense; the feature audit feeds whitespace and the EBR). Show the user a two-line progress note between prompts ("RCA done: primary driver value_perception, confidence 0.72; building the renewal plan").
+Perform the prompt's `<analysis_steps>` in full, in order, before writing anything. For a chained playbook, the output of the first prompt is an input to the second (the RCA feeds renewal defense; the feature audit feeds whitespace and the EBR). Show the user a one-line progress note between prompts, in plain words ("Found the cause: they are not sure it is worth what they pay. Building the renewal plan next.").
 
 Apply the `<guardrails>`. In particular:
 - No number without a `source_path` into the Customer 360.
@@ -41,18 +41,22 @@ Write each communication as `cs-engine/accounts/<account_id>/<playbook_id>.<prom
 
 ## 4. Deliver
 
-Reply in this order, briefly:
+Write the reply for a CEO who has never heard of this account, following `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/writing-standard.md`. In this order:
 
-1. **Verdict line**: playbook, priority, primary driver, confidence, renewal outlook band.
-2. **Diagnosis**: the `summary` verbatim (it was written to be read in 20 seconds).
-3. **Actions**: a table: #, type, title, owner, due, approval needed. Mark the single interrupting intervention.
-4. **Drafts**: subject and recipient of each communication, with the file name; offer to open one.
-5. **Evidence**: the three strongest `evidence[]` entries as `path = value`.
-6. **Flags**: `data_quality_flags` and `notes_for_csm`.
+1. **Headline**: the account, the dollars and date at stake, and the cause in plain words (the primary driver translated, never the code).
+2. **The short version**: the `summary`, which the prompt wrote for this reader.
+3. **The account in brief**: who they are, what they use the product for, customer since, annual value, renewal date, and the value they have seen so far, from `account`, `contract`, `lifecycle` and `account.business_outcomes`.
+4. **What happened**: the dated facts behind the diagnosis, oldest first.
+5. **What it puts at risk**: revenue, decision date, the blast radius in words, and what happens if nothing is done; then the counter-evidence in one sentence.
+6. **The plan**: a table of step, who, by when (calendar dates), and whether it needs approval. Mark the single interrupting intervention and say why it matters most.
+7. **Drafts**: recipient (name and role), subject, and the body, so the reader sees exactly what would be sent; the file name goes in the details.
+8. **What I need from you**: the approvals and decisions.
+9. **How sure we are**: the confidence in words, and the question to ask first if the prompt gave one.
+10. **Details for the CSM**: playbook id, priority, driver code, confidence as a number, the three strongest `evidence[]` entries as `path = value`, `data_quality_flags`, `notes_for_csm`, and the files written.
 
-Then offer the writes, one `AskUserQuestion` with multi-select:
-- each `crm_write` action (e.g., "Set `cse_risk_tier = red_champion` on the account in ~~crm")
-- each `crm_task` action ("Create task '…' due in N days for <owner>")
+Then offer the writes, one `AskUserQuestion` with multi-select, each option in plain words with the technical detail in parentheses:
+- each `crm_write` action (e.g., "Flag Contoso as high-risk in ~~crm (sets `cse_risk_tier = red_champion`)")
+- each `crm_task` action ("Create a task for Priya: 'Red account review: Contoso', due October 17")
 - optional: "Post the P0 alert to ~~chat"
 - optional: "Create a draft of comm_1 in ~~email" (a *draft*; never a send)
 - optional: "Save the RCA / plan / EBR as a document in ~~documents"

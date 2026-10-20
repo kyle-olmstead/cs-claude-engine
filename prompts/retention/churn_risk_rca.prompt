@@ -1,6 +1,6 @@
 ---
 id: retention.churn_risk_rca
-version: 2.4.1
+version: 2.5.0
 model: claude-sonnet-5-5
 temperature: 0.2
 max_tokens: 4096
@@ -75,7 +75,7 @@ Timing matters. A usage decline that *preceded* the champion's departure is a di
 Call `emit_playbook_action` once. Specifics for this prompt:
 - `playbook_id`: "PB-RET-01"
 - `priority`: P0 if days_to_renewal ≤ 120 or champion departed or ECRI ≥ 60; else P1.
-- `diagnosis.summary`: open with the mechanism in one sentence ("This account is at risk because X, which began around DATE and shows up as Y."), then the blast radius, then the interrupting intervention.
+- `diagnosis.summary`: for a reader who has never heard of the account. Open with the account and the mechanism in one sentence ("Contoso Logistics, a $240,000-a-year customer renewing January 18, 2027, is at risk because X, which began around DATE and shows up as Y."), then how much of the account is affected, then the one step that interrupts it. Plain words, no codes or field names.
 - `diagnosis.timeline[]`: the ordered events from step 1 (date, event, source_path). Minimum three, maximum twelve.
 - `diagnosis.candidate_drivers[]`: the three from step 3 with `for`, `against`, `to_confirm`.
 - `diagnosis.disambiguating_question`: required when confidence < 0.75.

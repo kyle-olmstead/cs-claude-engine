@@ -9,7 +9,7 @@ description: >
   intervention) chained into a renewal defense plan (scenarios, stakeholder asks, dated actions,
   one approval-gated outreach draft), with every claim tied to a field in the Customer 360.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   playbook_id: "PB-RET-01"
 ---
 
@@ -42,7 +42,7 @@ Before the RCA, read `${CLAUDE_PLUGIN_ROOT}/playbooks/enterprise_at_risk_turnaro
 - `PB-RET-01.churn_risk_rca.action.json`: the RCA
 - `PB-RET-01.renewal_defense_playbook.action.json`: the plan
 - `PB-RET-01.renewal_defense_playbook.comm_1.md`: exec continuity or renewal kickoff draft (approval required)
-- An internal escalation brief: render from the two actions into `PB-RET-01.escalation_brief.md` when the tier is Critical or High. One page: what, why (mechanism + evidence), what we need from whom by when, the ask of leadership.
+- An internal escalation brief: render from the two actions into `PB-RET-01.escalation_brief.md` when the tier is Critical or High. One page for leadership, written per `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/writing-standard.md`: the account in brief, what happened and why, what is at stake, what we need from whom by when, and the ask of leadership.
 
 ## Proposed writes (offered, never automatic)
 

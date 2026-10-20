@@ -1,6 +1,6 @@
 ---
 id: retention.renewal_defense_playbook
-version: 2.2.1
+version: 2.3.0
 model: claude-sonnet-5-5
 temperature: 0.3
 max_tokens: 6000
@@ -66,7 +66,7 @@ Timeline anchors (relative to renewal date R): R−120 kickoff; R−90 value rev
 Call `emit_playbook_action` once. Specifics:
 - `playbook_id`: "PB-RET-01" when an RCA is present, else "PB-RET-02".
 - `priority`: P0 if days_to_renewal ≤ 120, else P1.
-- `diagnosis.summary`: the recommended scenario and why, the mechanism being neutralized, the two biggest dependencies.
+- `diagnosis.summary`: for a reader who has never heard of the account: the account and renewal in value terms, the recommended outcome in plain words (renew as is, renew smaller, renew longer and larger) and why, what we are neutralizing, and the two things the plan depends on.
 - `renewal_plan.recommended_scenario`: one of `full_renewal`, `right_size`, `multi_year_expansion`.
 - `renewal_plan.fallback_scenario`: one of the same.
 - `renewal_plan.scenarios[]`: all three with `feasibility` (0–1), `grr_impact_usd` (positive = ARR retained; negative = ARR lost relative to current), `main_risk`, `evidence_paths[]`.

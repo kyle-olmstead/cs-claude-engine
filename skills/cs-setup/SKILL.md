@@ -10,7 +10,7 @@ description: >
   mapping with the user, saves it as the stack profile, and proves the install by scoring a
   sample account.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   playbook_id: "SETUP"
 ---
 
@@ -106,7 +106,10 @@ python3 ${CLAUDE_PLUGIN_ROOT}/src/models/health_score.py ${CLAUDE_PLUGIN_ROOT}/e
 ```
 
 If Python is unavailable in this session, read `${CLAUDE_PLUGIN_ROOT}/examples/sample_customer_360.json`
-and explain the health score from its `health.components` instead. Either way, end with:
+and explain the health score from its `health.components` instead. Either way, present it the way
+every reply reads (`${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/writing-standard.md`):
+a headline, the account in two sentences, and what is driving the score in plain words. Then end
+with:
 
 - the three skills to try first: `customer-360` on a real account, `book-review` for the whole
   book, and whichever playbook matches their biggest worry (red account → `red-account-turnaround`;

@@ -10,7 +10,7 @@ description: >
   reasons and the playbook to run, plus portfolio capacity notes. It runs full playbooks only
   on request or when the user has pre-approved them for a schedule.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   playbook_id: "BOOK"
 ---
 
@@ -53,15 +53,16 @@ Compute with `src/models/metrics_calculator.py` (or by hand): book ARR, ARR-weig
 
 ## Step 4: The digest
 
-Write `cs-engine/runs/<today>/digest.md` and reply with it, in this order, each item one line:
+Write `cs-engine/runs/<today>/digest.md` and reply with it. Write it for a CEO who knows none of these accounts (`${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/writing-standard.md`): every line says who the customer is in value terms, what is happening in plain words, and what we will do. In this order:
 
-1. **P0 (act today)**: red accounts, champion departures, aged P1s, ECRI ≥ 60, renewals ≤ 120d with health < 65. `<account> · $ARR · health <score> (<delta>) · <reason> · → red-account-turnaround`
-2. **P1 (this week)**: TTV stalls, feature-depth erosion, standard renewal defense.
-3. **P2 (cadence)**: EBRs due in 30 days.
-4. **P3 (expansion-ready)**: utilization ≥ 85%, gate hits, PQL, with indicative size when obvious.
-5. **Changes since last run**: band transitions, new tickets, champion status changes (diff against the previous `runs/<date>/digest.json`).
-6. **Portfolio**: the numbers from step 3 in one short block.
-7. **Data gaps**: connectors missing and how many accounts are reduced-confidence because of it.
+1. **Headline**: one sentence on the book and what needs action: "31 customers worth $4.1M a year; two need action today, together $420,000 a year."
+2. **One line on how to read it**: health is 0 to 100, built from product use, support, relationships and contract; 75 and up is healthy, under 50 is at risk.
+3. **Act today** (P0: red accounts, champion departures, aged P1s, ECRI ≥ 60, renewals ≤ 120d with health < 65), **This week** (P1: TTV stalls, feature-depth erosion, standard renewal defense), **Coming up** (P2: EBRs due in 30 days), **Room to grow** (P3: utilization ≥ 85%, gate hits, PQL, with a rough size when obvious). The criteria in parentheses are for you; the reader sees only the plain headings. One line per account: `**<account>** ($<ARR> a year, renews <date>): <what is happening, in plain words, with the one number that proves it>. → <what we will do>`.
+4. **Since last time**: accounts that changed band, new urgent tickets, main contacts who left or were replaced (diff against the previous `runs/<date>/digest.json`).
+5. **The whole book**: the numbers from step 3 in one or two sentences.
+6. **What I could not see**: missing connections, and how many accounts are scored with less information because of it.
+
+Keep codes out of the lines; the playbook skill name goes in the details only when the user runs it.
 
 Then one `AskUserQuestion` (multi-select): which flagged accounts to run the full playbook on now. Run only the selected ones, each through its skill. If the stack profile records pre-approved playbooks for scheduled runs, run those automatically for P0 items only and leave the rest as the digest.
 
@@ -71,7 +72,7 @@ If the user wants this daily or weekly, set it up as a scheduled task with this 
 
 ## Rules
 
-- A digest line is one line. The playbook skills carry the detail.
+- A digest line is one line a stranger to the account can understand. The playbook skills carry the detail.
 - Never rank by ARR alone; rank by priority, then ARR within priority.
 - Keep connector calls proportionate to the book: batch reads where the CRM allows (list companies with properties in one call; list open tickets filtered by account ids in one call).
 - Save `runs/<today>/digest.json` (machine-readable: per-account score, band, fired playbooks, reasons) for the next run's diff.
