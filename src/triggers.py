@@ -63,6 +63,8 @@ def trig_ret_02(c: Dict[str, Any]) -> Optional[str]:
 def trig_adp_01(c: Dict[str, Any]) -> Optional[str]:
     if _g(c, "lifecycle.stage") != "onboarding" or _g(c, "lifecycle.value_milestones_reached", []):
         return None
+    if "value_milestones_unmapped" in (c.get("data_quality_flags") or []):
+        return None  # no milestone events are mapped, so "no milestone reached" is not evidence of a stall
     days, p75 = _g(c, "lifecycle.days_since_term_start", 0), _bench(c, "ttv_p75_days", 35)
     return f"onboarding day {days} > p75 {p75} with no value milestone" if days > p75 else None
 

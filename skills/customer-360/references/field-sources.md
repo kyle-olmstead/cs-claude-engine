@@ -11,21 +11,23 @@ Conventions used below:
 
 **Index (read only the section you need):**
 
-- `account`: starts at line 30
-- `contract`: starts at line 44
-- `health`: starts at line 58
-- `usage`: starts at line 70
-- `support`: starts at line 93
-- `sentiment`: starts at line 107
-- `relationship`: starts at line 121
-- `opportunities`: starts at line 137
-- `whitespace`: starts at line 141
-- `cadence`: starts at line 151
-- `lifecycle`: starts at line 155
-- `conversations`: starts at line 166
-- `actions_last_30d`: starts at line 170
-- `benchmarks`: starts at line 174
+- `account`: starts at line 34
+- `contract`: starts at line 48
+- `health`: starts at line 62
+- `usage`: starts at line 74
+- `support`: starts at line 97
+- `sentiment`: starts at line 111
+- `relationship`: starts at line 125
+- `opportunities`: starts at line 141
+- `whitespace`: starts at line 145
+- `cadence`: starts at line 155
+- `lifecycle`: starts at line 159
+- `conversations`: starts at line 170
+- `actions_last_30d`: starts at line 174
+- `benchmarks`: starts at line 178
 - `cs platform` (Gainsight): at the end of the file
+
+**Tool-specific maps.** This file gives the generic rule for each field. When the connected tool has its own map in `tools/` beside this file (Intercom, Pylon, Zoho Desk, HubSpot Service Hub, Fireflies, Fathom, Amplitude, Mixpanel, Pendo, PostHog, Stripe, Chargebee, Apollo, ZoomInfo, Gainsight), use that map for its block: it wins where the two differ.
 
 ---
 
@@ -75,11 +77,11 @@ Source: `~~product analytics` (events keyed by account/workspace id and user ema
 
 | Field | How to derive | Flag |
 |---|---|---|
-| `mau_30d` | distinct users with ≥ 1 session in last 30 days | `usage_unavailable` (set 0 and set `dau_mau_30d: 0`, `feature_depth_30d: 0`, `feature_breadth_30d: 0`, `seat_utilization: 0`, `utilization_drift_90d: 0`, `days_since_last_login: 0`, `core_features_used: []`, `core_features_unused: []`) |
+| `mau_30d` | distinct users with ≥ 1 session in last 30 days | `usage_unavailable` (set `null` and set `dau_mau_30d`, `active_users_30d`, `feature_depth_30d`, `feature_breadth_30d`, `seat_utilization`, `utilization_drift_90d` and `days_since_last_login` to `null`; `core_features_used: []`, `core_features_unused: []`). Never 0: a 0 is scored as nobody using the product |
 | `active_users_30d` | same as MAU for seat products; licensed users with activity for products that distinguish licensed from guest | same |
 | `dau_mau_30d` | mean(daily distinct active users over 30d) / `mau_30d`; business-day mean for weekday products | same |
 | `wau_mau_30d` | distinct users active in last 7d / `mau_30d` | omit |
-| `feature_depth_30d` | distinct **core** features with ≥ 1 event in 30d / total core features. Core feature list: from the product analytics "core events" taxonomy, else from the plugin default catalog in `src/orchestrator.py::DEFAULT_FEATURE_CATALOG` (`is_core: true`) | `feature_taxonomy_default` when using the default catalog |
+| `feature_depth_30d` | distinct **core** features with ≥ 1 event in 30d / total core features. Core feature list: from the product analytics "core events" taxonomy, else from the plugin default catalog in `src/catalogs.py::DEFAULT_FEATURE_CATALOG` (`is_core: true`) | `feature_taxonomy_default` when using the default catalog |
 | `feature_breadth_30d` | distinct features used / all features | same |
 | `power_user_ratio` | users with ≥ 3 core features in 30d / MAU | omit |
 | `seat_utilization` | `active_users_30d / seats_purchased` (not capped; > 1 = over-deployed) | none |
@@ -98,7 +100,7 @@ Source: `~~support desk` → `~~crm` tickets object (HubSpot Service Hub, Salesf
 
 | Field | How to derive | Flag |
 |---|---|---|
-| `open_tickets[]` | status not solved/closed; map priority to P1–P4 (urgent→P1, high→P2, normal→P3, low→P4); `age_days = today − created`; `subject` verbatim; `reopened_count` from events; tags | `support_unavailable` (empty list, `tickets_30d: 0`, `tickets_per_100_seats_30d: 0`, `avg_csat_90d: null`, `median_first_response_hours_90d: null`) |
+| `open_tickets[]` | status not solved/closed; map priority to P1–P4 (urgent→P1, high→P2, normal→P3, low→P4); `age_days = today − created`; `subject` verbatim; `reopened_count` from events; tags | `support_unavailable` (`open_tickets: null`, and `tickets_30d`, `tickets_per_100_seats_30d`, `p1_p2_opened_90d`, `avg_csat_90d`, `csat_responses_90d` and `median_first_response_hours_90d` all `null`). `[]` and 0 only when a connected desk truly has nothing |
 | `tickets_30d` | created in last 30d | same |
 | `tickets_per_100_seats_30d` | `tickets_30d × 100 / seats_purchased` (0 if seats unknown) | same |
 | `p1_p2_opened_90d` | count | same |
@@ -180,17 +182,8 @@ Segment defaults from `src/orchestrator.py::DEFAULT_BENCHMARKS` (also tabulated 
 
 ## `~~cs platform` (Gainsight CS)
 
-When the stack profile maps a CS platform, read it *after* the CRM and use it to fill or corroborate these fields. Standard Gainsight NXT object names are used below; field labels vary by instance, so confirm them with the admin during `cs-setup`. This is a mapping, not a tested integration.
+When the stack profile maps Gainsight, read it *after* the CRM, as a second opinion on health and as the record of work already in flight. The full map (connector tools, account matching, every field, the score and stage vocabularies, and the setup check) is `tools/gainsight.md` in this folder. The rules that hold for any CS platform:
 
-| Customer 360 field | Gainsight source | Notes |
-|---|---|---|
-| `health.mart_score` | Company → Scorecard overall score (0 to 100) | The engine's own score is computed separately; the drift between the two is reported in `health.drift_error`, never averaged. If the scorecard uses letters or colors, convert on the documented scale and flag `cs_platform_score_converted`. |
-| `actions_last_30d[]` | Cockpit → CTAs opened or updated in the last 30 days (`playbook_id` from the CTA type or reason, `status` open/closed, `emitted_at` from created date, `action_id` the CTA id) | Lets cooldowns respect work already in flight in the platform. |
-| `cadence.last_ebr_at`, `cadence.next_ebr_due_at` | Timeline → activities of type EBR/QBR; Success Plan objectives with a due date | Prefer the calendar connector if both exist. |
-| `relationship.stakeholders[]` (merge) | Company Person → role, title, last activity | Merge by email hash; CRM contact wins on conflict; add `source: gainsight` on rows only the platform knew about. |
-| `relationship.champion` | Company Person with the champion or sponsor role flag | Fill only if the CRM has no champion flag; flag `champion_from_cs_platform`. |
-| `lifecycle.stage` | Company → lifecycle stage (Onboarding, Adopting, Established, Renewing) | Map to the schema's enum; unknown values → `null` and flag `lifecycle_stage_unmapped`. |
-| `contract.arr`, `contract.renewal_date` | Company → ARR, Renewal Date | CRM wins on conflict; report a disagreement over 5 percent as `arr_source_disagreement`. |
-| `sentiment.latest_nps` | Survey responses synced to Gainsight, if the survey tool is not connected directly | Prefer the survey connector. |
-
-Never write to the platform from this skill. Playbook skills may *propose* a CTA or a timeline entry; it goes through the same approval question as any CRM write.
+- The engine's own score is computed separately; the platform's score goes in `health.mart_score` and the drift between them is reported, never averaged.
+- The CRM wins on ARR and renewal date when the two disagree; report a disagreement over 5 percent as `arr_source_disagreement`.
+- Never write to the platform from this skill. Playbook skills may *propose* a CTA or a timeline entry; it goes through the same approval question as any CRM write.

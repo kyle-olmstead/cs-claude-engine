@@ -325,3 +325,25 @@ def test_catalog_scoping_never_leaks_another_accounts_inputs(tmp_path):
     assert "ttv_p75_days" in seg and "enterprise" not in seg
     with pytest.raises(ValueError):
         Orchestrator(tmp_path, dry_run=True, offline=True, csm_name="t", catalog_overrides={"_scopes": {"pricing": "tenant"}})
+
+
+# ---- missing sources are unknown, not zero --------------------------------------------
+
+def test_missing_usage_is_left_out_of_the_score_not_scored_as_zero():
+    doc = json.loads(json.dumps(SAMPLE))
+    for k in ("dau_mau_30d", "mau_30d", "active_users_30d", "feature_depth_30d", "feature_breadth_30d",
+              "seat_utilization", "utilization_drift_90d", "days_since_last_login"):
+        doc["usage"][k] = None
+    r = compute_health_score(doc)
+    assert r.coverage < 1.0 and "adoption.dau_mau_30d" in r.inputs_missing
+    assert abs(r.raw_weighted_sum - compute_health_score(SAMPLE).raw_weighted_sum) < 5  # no 0-filled penalty
+    jsonschema.Draft202012Validator(load_schema("customer_360.json")).validate(doc)
+
+
+def test_onboarding_trigger_needs_mapped_milestones():
+    from src.triggers import trig_adp_01
+    doc = json.loads(json.dumps(SAMPLE))
+    doc["lifecycle"].update({"stage": "onboarding", "days_since_term_start": 120, "value_milestones_reached": []})
+    assert trig_adp_01(doc)
+    doc["data_quality_flags"] = ["value_milestones_unmapped"]
+    assert trig_adp_01(doc) is None

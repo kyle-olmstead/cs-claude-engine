@@ -13,7 +13,7 @@ The same prompts, schemas, scoring code, and playbook logic run in two environme
 | | **Plugin mode** | **Server mode** |
 |---|---|---|
 | Runtime | Claude itself, inside a user's Claude account (app, Cowork, or Claude Code), with the repo installed as a plugin | A Python process (`src/orchestrator.py`) on a schedule, calling the Messages API |
-| L0 sources | The user's **connectors** (MCP tools for HubSpot/Salesforce, Zendesk, Gong/Zoom, Amplitude, Clay, Slack, Gmail, Drive…) as discovered by the `cs-setup` skill and recorded in the stack profile | ELT into a warehouse |
+| L0 sources | The user's **connectors** (MCP tools for HubSpot/Salesforce, Intercom, Zoom/Fireflies, Amplitude, Stripe, Clay, Slack, Gmail, Drive…; per-tool maps in `skills/customer-360/references/tools/`) as discovered by the `cs-setup` skill and recorded in the stack profile | ELT into a warehouse |
 | L1 transform | None persisted: the `customer-360` skill assembles the document in-session per `skills/customer-360/references/field-sources.md`; history is kept in `cs-engine/accounts/<id>/history/` in the user's working folder | dbt marts |
 | L2 assembly | The skill, writing `customer_360.json` and running `health_score.py` + `validate.py` as bundled scripts | The orchestrator |
 | L3 intelligence | Claude reasons directly from the prompt files, following the same `<analysis_steps>` and `<guardrails>`; outputs the same `PlaybookAction` schema | Messages API with forced `tool_use` |

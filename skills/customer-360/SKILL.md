@@ -10,7 +10,7 @@ description: >
   enrichment), computes the weighted health score with full component explainability, and
   reports the result with evidence paths and data-quality flags.
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   playbook_id: "C360"
 ---
 
@@ -38,7 +38,13 @@ properties for business outcomes, opt-outs, and any `tech_stack` property.
 Follow `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/field-sources.md`, reading only the section for the block being filled (the file is one section per block; the index at the top gives the line ranges) rather than the whole file.
 It names, for every Customer 360 field: the category it comes from, how to compute it from raw
 records when the connector only exposes records, the fallback source, and the flag to set when
-nothing is available. Work block by block:
+nothing is available.
+
+When the stack profile maps a category to a tool that has its own map in
+`${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/tools/` (for example `intercom.md`,
+`amplitude.md`, `stripe.md`), read that map for the block: it names the connector tools to call,
+how to match the tool's records to this account, the exact vendor fields, and the vocabulary
+translations. The tool map wins over the generic rule where they differ. Work block by block:
 
 1. `contract`: ARR, term, seats, payment status, contraction, renewal opportunity (`~~billing`
    first, `~~crm` fallback).

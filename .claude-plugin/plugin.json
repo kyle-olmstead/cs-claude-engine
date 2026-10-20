@@ -1,6 +1,6 @@
 {
   "name": "cs-engine",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "An AI Customer Success operating system for your book of business. Pulls a Customer 360 from the CRM, support desk, call recorder, surveys and product data you already have connected; scores health with full explainability; runs churn root-cause analysis, renewal defense, onboarding acceleration, feature-depth audits, expansion whitespace and executive business reviews; and returns every recommendation as an evidence-backed, approval-gated action.",
   "author": {
     "name": "Kyle Olmstead",

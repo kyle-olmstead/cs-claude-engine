@@ -134,17 +134,21 @@ The engine is only as good as three things in your CRM. Thirty minutes here is w
 | **Accurate renewal dates and annual revenue on each account** | Every renewal and retention play keys off these | Company / account properties |
 | **Your price book** (or just list prices per seat and tier) | Expansion sizing uses placeholder prices until it has yours | A document, or your CRM's product library |
 
-**What it works with.** The engine reads whatever connectors your Claude workspace already has, and `cs-setup` maps them to the roles it needs. Checked against Claude's connector directory on 2026-10-17:
+**What it works with.** The engine reads whatever connectors your Claude workspace already has, and `cs-setup` maps them to the roles it needs. "Built against" means the repo has a specific map for that tool: which connector tools to call, how its records match your CRM accounts, and which vendor fields feed which part of the health score. Checked against Claude's connector directory on 2026-10-17, and re-checked for the mapped tools on 2026-10-20:
 
 | Role | Built against | Connectors available today |
 |---|---|---|
 | CRM (required) | HubSpot, Salesforce | Pipedrive, Attio, Zoho CRM, Close |
-| CS platform (optional) | | Gainsight |
-| Support desk | | Intercom, Pylon, Zoho Desk, HubSpot Service Hub |
-| Calls | Zoom | Fireflies, Fathom, tl;dv |
-| Product analytics | | Amplitude, Mixpanel, Pendo, PostHog |
+| CS platform (optional) | Gainsight | |
+| Support desk | Intercom, Pylon, Zoho Desk, HubSpot Service Hub | |
+| Calls | Zoom, Fireflies, Fathom | tl;dv |
+| Product analytics | Amplitude, Mixpanel, Pendo, PostHog | |
+| Billing | Stripe, Chargebee | |
+| Enrichment | Clay, Apollo, ZoomInfo | |
 | Warehouse | the dbt project | BigQuery, Snowflake, Databricks, dbt |
-| Billing, enrichment, chat, email, calendar, docs | Clay | Stripe, Chargebee, Apollo, ZoomInfo, Slack, Microsoft 365, Gmail, Google Calendar, Google Drive, Notion |
+| Chat, email, calendar, docs | | Slack, Microsoft 365, Gmail, Google Calendar, Google Drive, Notion |
+
+The maps added on 2026-10-20 were written from each vendor's documentation and the connector's published tool list; none has been run against a live account yet. Setup checks each one the first time it runs and tells you anything it could not confirm.
 
 Any custom connector your admin adds works the same way. Tools with no connector yet (Zendesk, Gong, Qualtrics, and most CS platforms other than Gainsight) are listed with three ways to bring their data in: [`CONNECTORS.md`](CONNECTORS.md).
 

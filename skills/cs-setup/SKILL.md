@@ -10,7 +10,7 @@ description: >
   mapping with the user, saves it as the stack profile, and proves the install by scoring a
   sample account.
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   playbook_id: "SETUP"
 ---
 
@@ -60,6 +60,17 @@ For each **missing** category, say in one line what the engine loses without it,
 categories, and name the path from `CONNECTORS.md` ("When your tool isn't here") when the user's tool has no connector. Block only if `~~crm` is missing; then explain that the CRM is the account spine
 and suggest connecting one before continuing.
 
+## Step 2b: Check each mapped tool
+
+For every connected tool that has a map in `${CLAUDE_PLUGIN_ROOT}/skills/customer-360/references/tools/`,
+run the read described under that map's "Setup check" and record the result in the stack
+profile's status column using the wording the map gives (for example
+`connected (mapped; confirmed)` or `connected (mapped; CSAT not on this plan)`). These maps were
+written from vendor documentation; the check is what confirms them in this workspace. For chat,
+email, calendar and documents tools, one list call proving the connector answers is enough. A
+failed check is recorded, not fatal: the block falls back to the generic rule in
+`field-sources.md` and its flags.
+
 ## Step 3: Capture the operator context
 
 Ask, in one `AskUserQuestion` call, only what cannot be inferred:
@@ -88,7 +99,7 @@ segment_map: { "<crm value>": "enterprise", ... }
 | category | connector | server | status |
 |---|---|---|---|
 | crm | HubSpot | mcp__HubSpot | connected |
-| support desk | Zendesk | mcp__Zendesk | connected |
+| support desk | Intercom | mcp__Intercom | connected (mapped; confirmed) |
 | conversation intelligence | none | none | missing (sentiment pillar reduced) |
 ...
 ```
