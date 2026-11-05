@@ -4,6 +4,7 @@
 
 **If you read nothing else:**
 - It connects to your CRM and the other tools your team already has, and tells you which customers are about to leave, which are ready to buy more, and what to do about each one, with the plan and the first email already drafted.
+- It works alongside a CS platform like Gainsight, or on its own if your team runs CS out of the CRM.
 - It never contacts a customer or changes a record without a person approving it.
 - It's free, open source, and a CSM can install it in about ten minutes. A sample account is included so you can watch it work before connecting anything.
 
@@ -263,9 +264,11 @@ Every technical document opens with a plain-English summary so you can stop read
 
 ## FAQ
 
+**We already use Gainsight (or ChurnZero, Totango, Vitally). Why add this?** Keep it. Your CS platform is where account data, workflows and reporting live. The engine is a layer on top that reads that data alongside your CRM, support desk, calls and product usage, works out why an account is moving, and drafts the plan and first email for a person to approve. Gainsight is the CS platform it's built against today, and the others can bring their data in through one of the three routes in [`CONNECTORS.md`](https://github.com/kyle-olmstead/cs-claude-engine/blob/main/CONNECTORS.md).
+
 **Does it need an API key?** No. Plugin mode uses the connectors already in your Claude account. Server mode does.
 
-**I only have a CRM. Is that enough?** Yes. You'll get health scores and every playbook at reduced confidence, and the engine tells you which extra connection would help most.
+**I only have a CRM. Is that enough?** Yes. You'll get health scores and every playbook at reduced confidence, and the engine tells you which extra connection would help most. Plenty of teams run CS straight out of HubSpot or Salesforce, and this gives them root-cause analysis and playbooks without a platform contract or an implementation project.
 
 **Does it work with HubSpot? Salesforce? Zendesk? Gong?** HubSpot and Salesforce, yes; the repo is built against both. Zendesk and Gong have no Claude connector yet, so they are not plug-and-play; most teams bring their numbers in through the CRM, a warehouse export, or a custom connector, and [`CONNECTORS.md`](CONNECTORS.md) walks through all three. Everything with a connector in Claude's directory works through setup, because the engine is built around roles, not brands.
 
